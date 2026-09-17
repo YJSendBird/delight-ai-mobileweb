@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp">
+
+    <Button
+        android:id="@+id/btnAiConsulting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="상담하기(Simple) + with 런처"
+        android:textSize="18sp"
+        android:padding="16dp" />
+
+    <Button
+        android:id="@+id/btnConsulting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="상담하기(Custom)"
+        android:textSize="18sp"
+        android:padding="16dp"
+        android:layout_marginTop="16dp" />
+
+    <Button
+        android:id="@+id/btnConsultingWithUrl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="상담하기(CUSTOM+URL)"
+        android:textSize="18sp"
+        android:padding="16dp"
+        android:layout_marginTop="16dp" />
+
+    <Button
+        android:id="@+id/btnGuestConsulting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="비회원 상담"
+        android:textAllCaps="false"
+        android:textSize="18sp"
+        android:padding="16dp"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>
