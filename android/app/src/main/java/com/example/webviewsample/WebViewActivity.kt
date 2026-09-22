@@ -87,9 +87,19 @@ class WebViewActivity : AppCompatActivity() {
          * Initial Context Object
          *
          * 웹뷰에 전달할 초기 컨텍스트 정보
-         * 키-값 쌍으로 구성되며, URL 파라미터로 `context_{key}` 형태로 전달됩니다.
+         * 키-값 쌍으로 구성되며, URL 파라미터로 `context_{key}` 형태로 전달되어
+         * 웹에서 대화가 생성될 때 AI 에이전트의 context object로 주입됩니다.
+         *
+         * `userId`, `timezone`은 **필수**로 전달해 주세요.
+         * `language`, `country`는 선택 항목입니다.
          */
         private val INITIAL_CONTEXT_OBJECT = mapOf(
+            // 필수 항목
+            "userId" to USER_ID,                                          // 사용자 식별자
+            "timezone" to java.util.TimeZone.getDefault().id,             // IANA 타임존 (예: "Asia/Seoul")
+            // 선택 항목
+            "language" to java.util.Locale.getDefault().toLanguageTag(),  // BCP-47 (예: "ko-KR")
+            "country" to java.util.Locale.getDefault().country,           // ISO 3166-1 alpha-2 (예: "KR")
             "appVersion" to "1.0.0",
             "platform" to "android"
         )

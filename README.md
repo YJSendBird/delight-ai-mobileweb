@@ -203,5 +203,22 @@ const unsubscribe = bridge.on('some_event', (data) => {
 
 **예시:**
 ```
-http://localhost:5173/simple?appId=YOUR_APP_ID&aiAgentId=YOUR_AI_AGENT_ID&userId=YOUR_USER_ID&authToken=YOUR_AUTH_TOKEN&hasActiveConversation=true
+http://localhost:5173/simple?appId=YOUR_APP_ID&aiAgentId=YOUR_AI_AGENT_ID&userId=YOUR_USER_ID&authToken=YOUR_AUTH_TOKEN&hasActiveConversation=true&context_userId=YOUR_USER_ID&context_timezone=Asia%2FSeoul&context_language=ko-KR&context_country=KR
 ```
+
+### Context Object 파라미터 (`context_*`)
+
+`context_` prefix가 붙은 URL 파라미터는 모두 초기 컨텍스트 객체(initialContextObject)로 변환되어,
+**대화가 생성될 때 AI 에이전트의 context object로 주입**됩니다. 에이전트가 사용자 식별·시간대 계산·언어 응대에
+활용하므로 아래 항목을 함께 전달하는 것을 권장합니다.
+
+| 파라미터 | 필수 | 설명 | 예시 |
+|---------|------|------|------|
+| `context_userId` | ✓ | 사용자 식별자 (인증에 사용한 `userId`와 동일 값 권장) | `aiagent-test-user` |
+| `context_timezone` | ✓ | 사용자 기기의 IANA 타임존 | `Asia/Seoul` |
+| `context_language` | | 사용자 언어 (BCP-47) | `ko-KR` |
+| `context_country` | | 사용자 국가 (ISO 3166-1 alpha-2) | `KR` |
+
+- 네이티브 앱에서의 설정 위치: iOS `WebViewScreen.swift`의 `initialContextObject`, Android `WebViewActivity.kt`의 `INITIAL_CONTEXT_OBJECT`
+  (기기 설정에서 timezone/language/country를 동적으로 읽어 전달하는 예시 포함)
+- 대화가 생성된 **이후** context를 추가/변경하려면 `patch_context` 브릿지를 사용합니다. (`WEBVIEW_BRIDGE.md` 참고)
