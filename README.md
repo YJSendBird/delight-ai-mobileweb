@@ -222,3 +222,62 @@ http://localhost:5173/simple?appId=YOUR_APP_ID&aiAgentId=YOUR_AI_AGENT_ID&userId
 - 네이티브 앱에서의 설정 위치: iOS `WebViewScreen.swift`의 `initialContextObject`, Android `WebViewActivity.kt`의 `INITIAL_CONTEXT_OBJECT`
   (기기 설정에서 timezone/language/country를 동적으로 읽어 전달하는 예시 포함)
 - 대화가 생성된 **이후** context를 추가/변경하려면 `patch_context` 브릿지를 사용합니다. (`WEBVIEW_BRIDGE.md` 참고)
+
+#### 웹 코드에서의 주입 흐름 (예제)
+
+**1) URL 파라미터 파싱** — `web/src/utils/config.ts`
+`context_` prefix가 붙은 파라미터를 모두 모아 `initialContextObject`로 변환합니다.
+
+```typescript
+// web/src/utils/config.ts — parseAppParams()
+const urlParams = new URLSearchParams(window.location.search);
+
+// context_ prefix로 시작하는 모든 URL params를 initialContextObject로 변환
+// 예: context_userId=user-123 → { userId: 'user-123' }
+const initialContextObject: Record<string, string> = {};
+for (const [key, value] of urlParams.entries()) {
+  if (key.startsWith('context_')) {
+    initialContextObject[key.replace('context_', '')] = value;
+  }
+}
+```
+
+**2) 메신저에 context 전달** — `web/src/pages/SimpleChatPage.tsx`
+파싱한 객체를 `FixedMessenger`의 `context` prop으로 넘기면, **새 대화가 생성되는 시점에
+AI 에이전트의 context object로 주입**됩니다.
+
+```tsx
+// web/src/pages/SimpleChatPage.tsx
+const params = parseAppParams();
+const [context] = useState<Record<string, string>>(params?.initialContextObject || {});
+
+<FixedMessenger
+  appId={params.appId}
+  aiAgentId={params.aiAgentId}
+  userSessionInfo={...}
+  context={context}   // ← 대화 생성 시 이 객체가 에이전트 context로 주입됨
+>
+```
+
+**3) 대화 생성 이후 context 업데이트** — `patch_context` 브릿지
+이미 생성된 대화에 context를 추가/변경하려면, 네이티브 앱이 브릿지로 보낸 `patch_context`
+이벤트를 받아 `messengerRef.patchContext()`를 호출합니다.
+
+```tsx
+// web/src/pages/SimpleChatPage.tsx — useContextObject()
+const messengerRef = useRef<MessengerSessionRef>(null);
+
+useEffect(() => {
+  const destructor = bridge.on('patch_context', (data: Record<string, string>) => {
+    // 활성 대화가 있을 때: 진행 중인 대화의 context를 즉시 패치
+    messengerRef.current?.patchContext(data);
+
+    // (선택) 다음에 생성될 대화에도 반영하려면 context 상태를 함께 갱신
+    // setContext((prev) => ({ ...prev, ...data }));
+  });
+  return () => destructor();
+}, []);
+```
+
+> 커스텀 통합(`CustomMessengerPage.tsx`)에서는 `channel.patchContext(aiAgentId, data)`로
+> 현재 채널에 직접 패치하는 방식을 사용합니다.
