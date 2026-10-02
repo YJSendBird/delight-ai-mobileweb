@@ -163,6 +163,31 @@ queryParams={{
 }}
 ```
 
+#### 3. 커스텀 런처 + 안 읽은 메시지 수(숫자 뱃지) 표시
+
+SDK 기본 런처는 안 읽은 메시지가 있을 때 **레드닷(점)** 만 표시하며, 숫자 카운트는 내장 기능으로
+제공하지 않습니다. 숫자 뱃지가 필요하면 `FixedMessenger.Launcher`로 런처를 교체하고
+`chatSDK.aiAgent.getUnreadMessageCount()`로 직접 조회합니다.
+
+참고 구현: **`components/UnreadCountLauncher.tsx`** (조회 훅 + 숫자 뱃지 런처)
+
+```tsx
+import { UnreadCountLauncher } from '../components/UnreadCountLauncher.tsx';
+
+<FixedMessenger ... state={{ opened, setOpened }}>
+  <FixedMessenger.Launcher component={UnreadCountLauncher} />
+  <FixedMessenger.Style position="end-bottom" launcherSize={56} margin={{ end: 24, bottom: 28 }} />
+</FixedMessenger>
+```
+
+- 기본 레드닷은 접속·재접속 시점에만 갱신되지만, 위 구현은 `GroupChannelHandler`를 함께 사용해
+  **새 메시지 수신 시 실시간으로 갱신**됩니다.
+- 커스텀 런처를 지정하면 SDK 기본 런처가 렌더링되지 않으므로 `config.launcher.unreadBadgeEnabled`
+  설정도 적용되지 않습니다. 미읽음 표시는 커스텀 런처가 전적으로 담당합니다.
+- SDK가 주입하는 `style`에는 `position: fixed`와 좌표가 포함되어 있으므로, 뱃지 배치를 위해
+  `position`을 덮어쓰면 런처가 화면 좌측 상단으로 밀려납니다. 자세한 내용은
+  `Sendbird_AIAgent_커스텀런처_미읽음수_가이드.pdf`를 참고하세요.
+
 ## WebView Bridge
 
 네이티브 앱과 웹 앱 간의 양방향 통신을 지원하는 브릿지입니다.
