@@ -1,14 +1,22 @@
 package com.example.webviewsample
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // 푸시 알림 권한 요청 (Android 13+) — 권한이 없으면 알림이 표시되지 않습니다.
+        requestNotificationPermissionIfNeeded()
 
         val btnAiConsulting = findViewById<Button>(R.id.btnAiConsulting)
         val btnConsulting = findViewById<Button>(R.id.btnConsulting)
@@ -44,6 +52,25 @@ class MainActivity : AppCompatActivity() {
                 putExtra(WebViewActivity.EXTRA_GUEST, true)
             }
             startActivity(intent)
+        }
+    }
+
+    /** Android 13+ 에서는 알림 표시에 런타임 권한이 필요합니다. */
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            android.util.Log.d("SendbirdPush", "알림 권한 결과: $isGranted")
+        }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+
+        val granted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!granted) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 }

@@ -213,6 +213,38 @@ const unsubscribe = bridge.on('some_event', (data) => {
 });
 ```
 
+## 푸시 알림 (Push Notification)
+
+웹뷰 구성에서는 **네이티브 앱에 Sendbird SDK가 필요하지 않습니다.** 네이티브는 FCM/APNs로
+토큰을 받아 브릿지로 웹에 전달하고, 실제 등록은 웹의 SDK가 수행합니다.
+
+```
+FCM / APNs → 네이티브(토큰 수신·보관) → 웹뷰 로드 완료 시 bridge.sendPushToken()
+          → 웹: PushTokenRegister → chatSDK.registerFCM/APNSPushTokenForCurrentUser(token)
+```
+
+**관련 파일**
+
+| 플랫폼 | 파일 | 역할 |
+|---|---|---|
+| Android | `MyFirebaseMessagingService.kt` | FCM 토큰 수신(`onNewToken`), 푸시 수신 시 로컬 알림 생성 |
+| Android | `WebViewActivity.kt` | `onPageFinished`에서 토큰을 웹으로 전달 |
+| Android | `MainActivity.kt` | Android 13+ 알림 권한 요청 |
+| iOS | `PushManager.swift` | 권한 요청, APNs 토큰 수신·보관, 알림 수신/탭 처리 |
+| iOS | `WebViewScreen.swift` | `didFinish`에서 토큰을 웹으로 전달 |
+| 웹 | `components/PushTokenRegister.tsx` | 토큰을 받아 Sendbird에 등록 (수정 불필요) |
+
+**설정 필요 사항**
+
+- **Android**: Firebase 콘솔에서 `google-services.json`을 `app/`에 추가하고, `google-services`
+  플러그인을 활성화하세요. (샘플에는 FCM 의존성만 포함되어 있습니다 — `app/build.gradle.kts` 주석 참고)
+- **iOS**: Xcode에서 **Signing & Capabilities → + Capability → Push Notifications**를 추가하세요.
+  시뮬레이터는 APNs 토큰이 발급되지 않으므로 실기기 테스트가 필요합니다.
+- **대시보드**: Settings → Channels → Push notifications에서 APNs 인증서 / FCM 서비스 계정 키를 등록하세요.
+
+> 전체 구조, 대시보드 설정 화면, 플랫폼별 전체 코드와 유의사항은
+> `AIAgent_모바일웹뷰_연동가이드.pdf`의 "7. 푸시 알림 수신" 장을 참고하세요.
+
 ## URL 파라미터
 
 앱 실행 시 다음 URL 파라미터를 전달해야 합니다:

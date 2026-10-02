@@ -165,6 +165,15 @@ struct WebView: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             print("[Bridge] 웹 페이지 로드 완료")
+
+            // 푸시 토큰 전달 — 웹의 PushTokenRegister가 수신해 Sendbird에 등록합니다.
+            // 이미 받아둔 토큰이 있으면 즉시 전달하고, 아직이면 수신 시점에 전달되도록 등록해 둡니다.
+            if let token = PushManager.shared.deviceToken {
+                sendPushToken(token: token)
+            }
+            PushManager.shared.onTokenReady = { [weak self] token in
+                DispatchQueue.main.async { self?.sendPushToken(token: token) }
+            }
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {

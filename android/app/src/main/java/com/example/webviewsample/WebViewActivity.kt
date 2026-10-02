@@ -165,7 +165,18 @@ class WebViewActivity : AppCompatActivity() {
             // Bridge 인터페이스 등록
             addJavascriptInterface(bridge, "Android")
 
-            webViewClient = WebViewClient()
+            webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+
+                    // 푸시 토큰 전달 — 웹의 PushTokenRegister가 수신해 Sendbird에 등록합니다.
+                    // 이미 받아둔 토큰이 있으면 즉시 전달하고, 아직이면 수신 시점에 전달되도록 등록해 둡니다.
+                    PushTokenHolder.token?.let { bridge.sendPushToken(it) }
+                    PushTokenHolder.onTokenReady = { token ->
+                        runOnUiThread { bridge.sendPushToken(token) }
+                    }
+                }
+            }
             webChromeClient = WebChromeClient()
         }
     }
