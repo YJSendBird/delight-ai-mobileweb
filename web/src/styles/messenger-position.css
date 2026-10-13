@@ -1,0 +1,38 @@
+/**
+ * 메신저 위젯 위치 커스터마이징
+ *
+ * SDK는 아래 id를 고정으로 부여하므로 CSS로 직접 배치를 제어할 수 있습니다.
+ * (styled-components 클래스명 `sc-xxxx`는 빌드마다 바뀌므로 사용하면 안 됩니다)
+ *
+ *   #sb-agent-entry         루트 컨테이너
+ *   #sb-agent-window        열린 메신저 창 (role="dialog")
+ *   #sb-agent-launcher      런처(플로팅 버튼)
+ *   #sb-agent-nudge-message 넛지 말풍선
+ *
+ * SDK가 높은 우선순위로 인라인 성격의 스타일을 넣기 때문에 `!important`가 필요합니다.
+ *
+ * ⚠️ 데스크톱 폭에서만 적용합니다.
+ *    좁은 화면(모바일 웹뷰)에서는 SDK가 창을 전체화면으로 표시하므로,
+ *    위치를 덮어쓰면 레이아웃이 깨집니다.
+ */
+
+@media (min-width: 768px) {
+  /* 열린 메신저 창을 화면 하단 중앙에 배치 */
+  #sb-agent-window {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    bottom: 24px !important;
+    top: auto !important;
+  }
+
+  /* 런처(플로팅 버튼)도 중앙에 맞추려면 아래 주석을 해제하세요.
+     기본 위치(모서리)는 FixedMessenger.Style의 position/margin으로 제어합니다. */
+  /*
+  #sb-agent-launcher {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+  */
+}

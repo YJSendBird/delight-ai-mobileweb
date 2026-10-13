@@ -5,6 +5,7 @@ import { bridge } from '../libs/bridge';
 import { ActiveChannelObserver } from '../components/ActiveChannelObserver.tsx';
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { PushTokenRegister } from '../components/PushTokenRegister.tsx';
+import '../styles/messenger-position.css'; // 위젯 위치 커스터마이징 (가운데 정렬)
 
 // import { customStringSet } from '../libs/strings.ts';
 

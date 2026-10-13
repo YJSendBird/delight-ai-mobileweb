@@ -188,6 +188,36 @@ import { UnreadCountLauncher } from '../components/UnreadCountLauncher.tsx';
   `position`을 덮어쓰면 런처가 화면 좌측 상단으로 밀려납니다. 자세한 내용은
   `Sendbird_AIAgent_커스텀런처_미읽음수_가이드.pdf`를 참고하세요.
 
+#### 4. 위젯(메신저 창) 위치 변경
+
+런처와 열린 창의 위치는 `FixedMessenger.Style`의 `position` / `margin`으로 함께 제어됩니다.
+(`position`은 런처뿐 아니라 **열린 창의 기준 위치**도 결정합니다)
+
+```tsx
+<FixedMessenger.Style
+  position={'end-bottom'}   // start-bottom / end-bottom / start-top / end-top
+  launcherSize={56}
+  margin={{ start: 24, end: 24, bottom: 28, top: 24 }}
+/>
+```
+
+4개 모서리를 벗어난 위치(예: 하단 중앙)가 필요하면 SDK가 부여하는 **고정 id**를 CSS로 덮어씁니다.
+샘플에는 하단 중앙 배치 예제가 포함되어 있습니다 — `web/src/styles/messenger-position.css`
+
+| id | 대상 |
+|---|---|
+| `#sb-agent-window` | 열린 메신저 창 |
+| `#sb-agent-launcher` | 런처(플로팅 버튼) |
+| `#sb-agent-entry` | 루트 컨테이너 |
+| `#sb-agent-nudge-message` | 넛지 말풍선 |
+
+- styled-components 클래스명(`sc-xxxx`)은 빌드마다 바뀌므로 **반드시 위 id를 사용**하세요.
+- SDK 스타일 우선순위가 높아 **`!important`가 필요**합니다.
+- 좁은 화면에서는 SDK가 창을 전체화면으로 표시하므로, 예제처럼 `@media (min-width: 768px)`로
+  **데스크톱 폭에만 적용**해야 모바일 웹뷰 레이아웃이 깨지지 않습니다.
+
+> 상세 내용은 `Sendbird_AIAgent_위젯위치변경_가이드.pdf`를 참고하세요.
+
 ## WebView Bridge
 
 네이티브 앱과 웹 앱 간의 양방향 통신을 지원하는 브릿지입니다.
