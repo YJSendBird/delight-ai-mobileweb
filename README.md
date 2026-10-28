@@ -218,6 +218,34 @@ import { UnreadCountLauncher } from '../components/UnreadCountLauncher.tsx';
 
 > 상세 내용은 `Sendbird_AIAgent_위젯위치변경_가이드.pdf`를 참고하세요.
 
+#### 5. 프로필 아바타 테두리(링) 제거
+
+헤더·대화목록 아바타는 **프로필 이미지 로드가 완료되면 원형 배경색이 테마 primary 색으로**
+설정됩니다. 프로필 이미지 가장자리에 투명 여백이 있으면 그 사이로 배경이 드러나
+**두꺼운 링**처럼 보입니다. (CSS `border`가 아니라 `background-color`입니다)
+
+가장 간단한 해결책은 **투명 여백 없이 꽉 찬 프로필 이미지로 교체**하는 것입니다.
+이미지를 바꿀 수 없다면 CSS로 배경을 덮습니다.
+
+```css
+/* 헤더 · 대화목록 아바타 — SDK가 aria-hidden="true"로 렌더링 */
+#sb-agent-window [aria-hidden="true"]:has(> img) {
+  background-color: transparent !important;
+}
+
+/* 메시지 옆 아바타 (고정 id 제공) */
+#sb-agent-incoming-msg-sender-avatar {
+  background-color: transparent !important;
+  padding: 0 !important;
+}
+```
+
+- 헤더 아바타는 **고정 id가 없어** 구조 의존 선택자를 사용합니다. SDK 업데이트 후 재확인을 권장합니다.
+- `:has()`는 Chrome 105+ / Safari 15.4+ 에서 동작합니다.
+- 테마 primary를 바꾸면 런처·말풍선 색까지 함께 변경되므로 권장하지 않습니다.
+
+> 상세 내용은 `Sendbird_AIAgent_프로필아바타_테두리제거_가이드.pdf`를 참고하세요.
+
 ## WebView Bridge
 
 네이티브 앱과 웹 앱 간의 양방향 통신을 지원하는 브릿지입니다.
