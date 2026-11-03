@@ -7,6 +7,7 @@
 
 import SwiftUI
 import WebKit
+import SafariServices
 
 // MARK: - WebView Configuration
 /**
@@ -18,21 +19,19 @@ struct WebViewConfig {
     static let baseURL = "http://localhost:5173"
 
     // MARK: 필수 파라미터
-
     /// Sendbird Application ID
     /// - Note: 센드버드 대시보드에서 확인 가능
     static let appId = "YOUR_APP_ID"
-
     /// Sendbird AI Agent ID
     /// - Note: 센드버드 대시보드에서 확인 가능
     static let aiAgentId = "YOUR_AI_AGENT_ID"
 
-    /// Sendbird User ID — 앱에 생성한 사용자 아이디로 교체
-    /// - Note: 생성한 센드버드 유저의 아이디
+    /// Sendbird User ID — 위 앱에 생성한 사용자 아이디로 교체하세요.
+    /// - Important: 세션 토큰은 **앱에 종속**됩니다. 사용하는 앱 기준으로 발급해야 합니다.
     /// - SeeAlso: [유저 생성 API](https://sendbird.com/docs/chat/platform-api/v3/user/creating-users/create-a-user)
     static let userId = "YOUR_USER_ID"
 
-    /// User Authentication Token — 위 사용자에 대해 발급한 세션 토큰으로 교체
+    /// User Authentication Token — 위 사용자에 대해 발급한 세션 토큰으로 교체하세요.
     /// - Note: 유저에 대해 발급받은 세션 토큰. 세션 핸들러를 통한 인증 갱신 시에도 동일한 절차로 발급 필요.
     /// - SeeAlso: [세션 토큰 발급 API](https://sendbird.com/docs/chat/platform-api/v3/user/managing-session-tokens/issue-a-session-token#1-issue-a-session-token)
     static let authToken = "YOUR_AUTH_TOKEN"
@@ -222,6 +221,20 @@ struct WebView: UIViewRepresentable {
                     }
                 }
 
+            case "open_external":
+                // 메신저 안의 링크·첨부파일(PDF 등) 열기 요청.
+                // 웹에서 window.open 이 호출되기 전에 가로챈 것이므로,
+                // 이 이벤트로 도착했다면 출처가 챗봇임이 보장됩니다.
+                guard let payload = data as? [String: Any],
+                      let urlString = payload["url"] as? String,
+                      let url = URL(string: urlString),
+                      let scheme = url.scheme?.lowercased(),
+                      scheme == "http" || scheme == "https" else {
+                    print("[Bridge] open_external: 유효하지 않은 URL")
+                    return
+                }
+                DispatchQueue.main.async { self.presentExternalViewer(url) }
+
             case "session_error":
                 // 세션 에러 처리
                 DispatchQueue.main.async {
@@ -262,6 +275,30 @@ struct WebView: UIViewRepresentable {
                     print("[Bridge] Error sending to web: \(error)")
                 }
             }
+        }
+
+        /// 외부 뷰어로 URL 열기
+        ///
+        /// `SFSafariViewController` 는 **완료(닫기) 버튼과 공유 기능이 기본 제공**되고
+        /// PDF 렌더링도 OS 가 담당하므로, 웹뷰에 직접 띄울 때 생기는
+        /// "닫을 방법이 없다"는 문제가 발생하지 않습니다.
+        ///
+        /// 앱 밖(Safari 앱)으로 내보내고 싶다면 `UIApplication.shared.open(url)` 을 쓰면 됩니다.
+        private func presentExternalViewer(_ url: URL) {
+            guard let scene = UIApplication.shared.connectedScenes
+                    .compactMap({ $0 as? UIWindowScene })
+                    .first(where: { $0.activationState == .foregroundActive }),
+                  let root = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController else {
+                print("[Bridge] open_external: 표시할 화면을 찾지 못했습니다.")
+                return
+            }
+            // 이미 모달이 떠 있으면 그 위에 표시합니다.
+            var top = root
+            while let presented = top.presentedViewController { top = presented }
+
+            let viewer = SFSafariViewController(url: url)
+            viewer.dismissButtonStyle = .close
+            top.present(viewer, animated: true)
         }
 
         // Context 업데이트를 웹으로 전송 (Example)

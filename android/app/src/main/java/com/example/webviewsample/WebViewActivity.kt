@@ -1,5 +1,7 @@
 package com.example.webviewsample
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -65,6 +67,7 @@ class WebViewActivity : AppCompatActivity() {
          * @see <a href="https://sendbird.com/docs/chat/platform-api/v3/user/creating-users/create-a-user">유저 생성 API</a>
          */
         // 위 앱에 생성한 사용자 아이디로 교체하세요.
+        // ⚠️ 세션 토큰은 앱에 종속됩니다. 사용하는 앱 기준으로 발급해야 합니다.
         private const val USER_ID = "YOUR_USER_ID"
 
         /**
@@ -227,6 +230,32 @@ class WebViewActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 외부 뷰어로 URL 열기
+     *
+     * `ACTION_VIEW` 로 넘기면 OS 가 기본 브라우저/PDF 뷰어를 띄우므로
+     * **뒤로가기와 닫기가 기본 제공**됩니다.
+     * WebView 안에서 직접 열면 챗봇 화면을 덮어버려 돌아갈 방법이 없습니다.
+     */
+    private fun openExternalViewer(url: String) {
+        val uri = runCatching { Uri.parse(url) }.getOrNull()
+        val scheme = uri?.scheme?.lowercase()
+        if (uri == null || (scheme != "http" && scheme != "https")) {
+            Log.w("Bridge", "open_external: 유효하지 않은 URL — $url")
+            return
+        }
+        val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        try {
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            // 처리 가능한 앱이 없는 경우 — 사용자에게 알리고 조용히 넘어갑니다.
+            Log.e("Bridge", "open_external: 열 수 있는 앱이 없습니다.", e)
+            android.widget.Toast.makeText(this, "파일을 열 수 있는 앱이 없습니다.", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // Bridge 구현
     inner class WebViewBridge(
         private val activity: WebViewActivity,
@@ -274,6 +303,14 @@ class WebViewActivity : AppCompatActivity() {
                             }
                         }
                     }
+                }
+
+                "open_external" -> {
+                    // 메신저 안의 링크·첨부파일(PDF 등) 열기 요청.
+                    // 웹에서 window.open 이 호출되기 전에 가로챈 것이므로,
+                    // 이 이벤트로 도착했다면 출처가 챗봇임이 보장됩니다.
+                    val url = data?.optString("url").orEmpty()
+                    mainHandler.post { activity.openExternalViewer(url) }
                 }
 
                 "session_error" -> {
