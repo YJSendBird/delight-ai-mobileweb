@@ -6,6 +6,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.webkit.JavascriptInterface
+import android.webkit.ValueCallback
+import android.net.Uri as AndroidUri
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.webkit.WebChromeClient
@@ -15,6 +17,9 @@ import org.json.JSONObject
 class WebViewActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private lateinit var bridge: WebViewBridge
+
+    /** `<input type="file">` 처리기 — Android WebView는 앱이 직접 구현해야 합니다. */
+    private lateinit var fileChooser: WebViewFileChooser
 
     companion object {
         /**
@@ -59,7 +64,7 @@ class WebViewActivity : AppCompatActivity() {
          *
          * @see <a href="https://sendbird.com/docs/chat/platform-api/v3/user/creating-users/create-a-user">유저 생성 API</a>
          */
-        // 앱에 생성한 사용자 아이디로 교체
+        // 위 앱에 생성한 사용자 아이디로 교체하세요.
         private const val USER_ID = "YOUR_USER_ID"
 
         /**
@@ -70,7 +75,7 @@ class WebViewActivity : AppCompatActivity() {
          *
          * @see <a href="https://sendbird.com/docs/chat/platform-api/v3/user/managing-session-tokens/issue-a-session-token#1-issue-a-session-token">세션 토큰 발급 API</a>
          */
-        // 위 사용자에 대해 발급한 세션 토큰으로 교체
+        // 위 사용자에 대해 발급한 세션 토큰으로 교체하세요.
         private const val AUTH_TOKEN = "YOUR_AUTH_TOKEN"
 
         // ===== 옵션 파라미터 =====
@@ -139,6 +144,11 @@ class WebViewActivity : AppCompatActivity() {
 
         webView = findViewById(R.id.webView)
         bridge = WebViewBridge(this, webView)
+
+        // 파일 첨부 처리기는 반드시 onCreate 안에서 생성해야 합니다.
+        // (내부의 registerForActivityResult 는 Activity 가 STARTED 가 되기 전에 호출되어야 함)
+        fileChooser = WebViewFileChooser(this)
+        fileChooser.onRestoreInstanceState(savedInstanceState)
         setupWebView()
         loadUrl()
     }
@@ -177,7 +187,15 @@ class WebViewActivity : AppCompatActivity() {
                     }
                 }
             }
-            webChromeClient = WebChromeClient()
+            // 파일 첨부: onShowFileChooser 를 구현하지 않으면 첨부 버튼을 눌러도
+            // 파일 선택기가 열리지 않습니다. (iOS WKWebView 와의 플랫폼 차이)
+            webChromeClient = object : WebChromeClient() {
+                override fun onShowFileChooser(
+                    view: WebView?,
+                    filePathCallback: ValueCallback<Array<AndroidUri>>?,
+                    fileChooserParams: FileChooserParams?
+                ): Boolean = fileChooser.onShowFileChooser(filePathCallback, fileChooserParams)
+            }
         }
     }
 
@@ -187,6 +205,18 @@ class WebViewActivity : AppCompatActivity() {
         val isGuest = intent.getBooleanExtra(EXTRA_GUEST, false)
         val url = buildUrl(route, initialChannelUrl, isGuest)
         webView.loadUrl(url)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // 카메라 촬영 중 Activity 가 파괴될 때 결과 URI 를 보존합니다.
+        fileChooser.onSaveInstanceState(outState)
+    }
+
+    override fun onDestroy() {
+        // 열려 있는 파일 선택 요청을 정리합니다. (콜백 미호출로 input 이 잠기는 것 방지)
+        fileChooser.cancelPending()
+        super.onDestroy()
     }
 
     override fun onBackPressed() {

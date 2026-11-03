@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  카메라 촬영 결과를 WebView로 넘기기 위한 FileProvider 경로 선언.
+
+  이 파일이나 AndroidManifest의 <provider> 등록이 빠지면
+  FileProvider.getUriForFile() 호출 시 아래 예외로 앱이 종료됩니다.
+      IllegalArgumentException: Failed to find configured root that contains ...
+-->
+<paths>
+    <!-- WebViewFileChooser.launchCamera() 가 사용하는 cacheDir/camera -->
+    <cache-path name="camera" path="camera/" />
+</paths>

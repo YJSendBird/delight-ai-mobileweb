@@ -34,6 +34,21 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!--
+          카메라 촬영 결과를 WebView로 전달하기 위한 FileProvider.
+          WebViewFileChooser.ENABLE_CAMERA_CAPTURE 가 true 일 때 사용됩니다.
+          authorities 는 "{packageName}.fileprovider" 와 반드시 일치해야 합니다.
+        -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>
