@@ -25,6 +25,11 @@
         <activity
             android:name=".WebViewActivity"
             android:exported="false" />
+        <!-- 자사 서비스 링크를 스택에 쌓아 여는 화면 (뒤로가기로 메신저 복귀) -->
+        <activity
+            android:name=".InternalWebActivity"
+            android:label="@string/internal_web_title"
+            android:exported="false" />
 
         <!-- 푸시 수신 서비스 (google-services.json 적용 후 동작) -->
         <service

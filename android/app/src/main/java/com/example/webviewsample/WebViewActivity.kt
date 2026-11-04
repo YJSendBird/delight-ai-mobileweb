@@ -231,6 +231,24 @@ class WebViewActivity : AppCompatActivity() {
     }
 
     /**
+     * 자사 서비스 링크를 앱 내비게이션 스택에 쌓아서 열기
+     *
+     * `startActivity` 로 띄우므로 Activity 스택에 쌓이고,
+     * 뒤로가기 시 메신저 화면으로 정확히 복귀합니다. (히스토리 유지)
+     */
+    private fun openInternalPage(url: String) {
+        val scheme = runCatching { Uri.parse(url).scheme }.getOrNull()?.lowercase()
+        if (scheme != "http" && scheme != "https") {
+            Log.w("Bridge", "navigate_internal: 유효하지 않은 URL — $url")
+            return
+        }
+        startActivity(
+            Intent(this, InternalWebActivity::class.java)
+                .putExtra(InternalWebActivity.EXTRA_URL, url)
+        )
+    }
+
+    /**
      * 외부 뷰어로 URL 열기
      *
      * `ACTION_VIEW` 로 넘기면 OS 가 기본 브라우저/PDF 뷰어를 띄우므로
@@ -303,6 +321,13 @@ class WebViewActivity : AppCompatActivity() {
                             }
                         }
                     }
+                }
+
+                "navigate_internal" -> {
+                    // 자사 서비스 링크 → 별도 화면을 스택에 쌓아 이동.
+                    // 뒤로가기 한 번으로 메신저로 복귀하며, 대화 상태도 유지됩니다.
+                    val url = data?.optString("url").orEmpty()
+                    mainHandler.post { activity.openInternalPage(url) }
                 }
 
                 "open_external" -> {

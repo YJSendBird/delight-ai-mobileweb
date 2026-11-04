@@ -221,6 +221,19 @@ struct WebView: UIViewRepresentable {
                     }
                 }
 
+            case "navigate_internal":
+                // 자사 서비스 링크 → 앱 내비게이션으로 이동.
+                // 뒤로가기 한 번으로 메신저로 복귀하며 대화 상태도 유지됩니다.
+                guard let payload = data as? [String: Any],
+                      let urlString = payload["url"] as? String,
+                      let url = URL(string: urlString),
+                      let scheme = url.scheme?.lowercased(),
+                      scheme == "http" || scheme == "https" else {
+                    print("[Bridge] navigate_internal: 유효하지 않은 URL")
+                    return
+                }
+                DispatchQueue.main.async { self.pushInternalPage(url) }
+
             case "open_external":
                 // 메신저 안의 링크·첨부파일(PDF 등) 열기 요청.
                 // 웹에서 window.open 이 호출되기 전에 가로챈 것이므로,
@@ -277,6 +290,35 @@ struct WebView: UIViewRepresentable {
             }
         }
 
+        /// 자사 서비스 링크를 앱 안에서 열기
+        ///
+        /// `UINavigationController` 로 감싸 **뒤로/닫기 버튼을 제공**합니다.
+        /// 메신저가 떠 있는 WebView 를 그대로 두고 그 위에 새 화면을 올리므로,
+        /// 닫으면 대화 내용과 스크롤 위치가 그대로 유지됩니다.
+        ///
+        /// - Note: 같은 WebView 에 `load(_:)` 로 이동시켜도 히스토리는 남지만,
+        ///   돌아올 때 메신저가 리로드되어 대화가 초기화됩니다.
+        private func pushInternalPage(_ url: URL) {
+            guard let top = Self.topViewController() else { return }
+            let viewer = InternalWebViewController(url: url)
+            let nav = UINavigationController(rootViewController: viewer)
+            nav.modalPresentationStyle = .fullScreen
+            top.present(nav, animated: true)
+        }
+
+        /// 현재 최상단에 떠 있는 화면을 찾습니다.
+        static func topViewController() -> UIViewController? {
+            guard let scene = UIApplication.shared.connectedScenes
+                    .compactMap({ $0 as? UIWindowScene })
+                    .first(where: { $0.activationState == .foregroundActive }),
+                  let root = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController else {
+                return nil
+            }
+            var top = root
+            while let presented = top.presentedViewController { top = presented }
+            return top
+        }
+
         /// 외부 뷰어로 URL 열기
         ///
         /// `SFSafariViewController` 는 **완료(닫기) 버튼과 공유 기능이 기본 제공**되고
@@ -285,17 +327,10 @@ struct WebView: UIViewRepresentable {
         ///
         /// 앱 밖(Safari 앱)으로 내보내고 싶다면 `UIApplication.shared.open(url)` 을 쓰면 됩니다.
         private func presentExternalViewer(_ url: URL) {
-            guard let scene = UIApplication.shared.connectedScenes
-                    .compactMap({ $0 as? UIWindowScene })
-                    .first(where: { $0.activationState == .foregroundActive }),
-                  let root = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController else {
+            guard let top = Self.topViewController() else {
                 print("[Bridge] open_external: 표시할 화면을 찾지 못했습니다.")
                 return
             }
-            // 이미 모달이 떠 있으면 그 위에 표시합니다.
-            var top = root
-            while let presented = top.presentedViewController { top = presented }
-
             let viewer = SFSafariViewController(url: url)
             viewer.dismissButtonStyle = .close
             top.present(viewer, animated: true)

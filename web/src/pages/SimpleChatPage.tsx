@@ -2,7 +2,7 @@ import { ConversationHeaderLayout, FixedMessenger, type MessengerSessionRef } fr
 import { ConversationStatus } from '@sendbird/chat/aiAgent';
 import { createAnonymousSessionInfo, createSessionInfo, parseAppParams } from '../utils/config';
 import { bridge } from '../libs/bridge';
-import { openExternalLink } from '../libs/openExternalLink';
+import { handleLinkClick } from '../libs/linkHandler';
 import { ActiveChannelObserver } from '../components/ActiveChannelObserver.tsx';
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { PushTokenRegister } from '../components/PushTokenRegister.tsx';
@@ -65,7 +65,7 @@ function SimpleChatPage() {
       language={'ko-KR'}
       // 메신저 안의 링크/첨부파일 클릭을 네이티브 외부 뷰어로 연결
       // (PDF 등 이미지가 아닌 파일은 SDK가 window.open 으로 새 창 열기를 요청합니다)
-      handlers={{ onClickLink: openExternalLink }}
+      handlers={{ onClickLink: handleLinkClick }}
       // stringSet={customStringSet}
     >
       {/* 런처(플로팅 버튼)의 위치/크기/여백 스타일 */}

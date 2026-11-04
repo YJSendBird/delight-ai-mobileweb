@@ -5,4 +5,6 @@
     <string name="file_chooser_title">사진 첨부</string>
     <string name="file_chooser_camera">사진 촬영</string>
     <string name="file_chooser_gallery">앨범에서 선택</string>
+    <!-- 자사 서비스 링크 화면 제목 -->
+    <string name="internal_web_title">서비스 안내</string>
 </resources>
