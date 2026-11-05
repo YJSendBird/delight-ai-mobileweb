@@ -11,17 +11,42 @@
  *
  * SDK가 높은 우선순위로 인라인 성격의 스타일을 넣기 때문에 `!important`가 필요합니다.
  *
- * ⚠️ 데스크톱 폭에서만 적용합니다.
- *    좁은 화면(모바일 웹뷰)에서는 SDK가 창을 전체화면으로 표시하므로,
- *    위치를 덮어쓰면 레이아웃이 깨집니다.
+ *
+ * ── 적용 조건을 폭(width)만으로 정하면 안 되는 이유 ────────────────────────
+ *
+ * SDK는 **User-Agent 로 모바일/데스크톱을 구분**합니다. 폭이 아닙니다.
+ *
+ *   모바일(UA 판정)  →  전체화면 창: position:fixed; top:0; left:0;
+ *                                    width:100%; height:100%
+ *   데스크톱         →  고정 크기 창: width:400px; height:640px (모서리에 도킹)
+ *
+ * 그래서 `@media (min-width: 768px)` 만 쓰면 **폴더블 단말에서 어긋납니다.**
+ * 화면을 펼치거나 가로로 돌리면 폭은 768px 을 넘지만, UA 는 그대로 모바일이라
+ * SDK 는 여전히 전체화면 창을 그립니다. 전체화면 창에 "중앙 정렬" 규칙이 걸리는
+ * 잘못된 조합이 되고, 회전할 때마다 규칙이 켜졌다 꺼지며 위치가 흔들립니다.
+ *
+ * → `hover: hover` + `pointer: fine` 을 함께 걸어 **마우스를 쓰는 환경**,
+ *   즉 SDK 가 실제로 도킹 창을 그리는 환경에서만 적용되도록 합니다.
+ *
+ *
+ * ── `transform` 을 쓰지 않는 이유 ──────────────────────────────────────────
+ *
+ * `#sb-agent-window` 에 `transform` 을 주면 **그 안의 `position: fixed` 요소들의
+ * 컨테이닝 블록이 뷰포트가 아니라 이 요소로 바뀝니다.** (CSS 명세 동작)
+ * SDK 의 이미지 뷰어(`position:fixed; inset:0`)와 모달이 여기에 해당해서
+ * 전체화면으로 떠야 할 것이 창 안쪽에 갇히는 등 부작용이 생깁니다.
+ *
+ * → `left:0; right:0; margin-inline:auto` 로 중앙 정렬하면
+ *   `transform` 없이 같은 결과를 얻을 수 있습니다.
  */
 
-@media (min-width: 768px) {
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
   /* 열린 메신저 창을 화면 하단 중앙에 배치 */
   #sb-agent-window {
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%) !important;
+    /* 창은 width:400px 로 고정돼 있으므로 좌우 0 + margin auto 면 가운데로 옵니다. */
+    left: 0 !important;
+    right: 0 !important;
+    margin-inline: auto !important;
     bottom: 24px !important;
     top: auto !important;
   }
@@ -30,9 +55,9 @@
      기본 위치(모서리)는 FixedMessenger.Style의 position/margin으로 제어합니다. */
   /*
   #sb-agent-launcher {
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%) !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin-inline: auto !important;
   }
   */
 }
