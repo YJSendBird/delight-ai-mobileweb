@@ -152,9 +152,11 @@ struct WebView: UIViewRepresentable {
         Coordinator(onDismiss: onDismiss)
     }
 
-    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler, WKDownloadDelegate {
         weak var webView: WKWebView?
         let onDismiss: () -> Void
+        /// 다운로드 중인 파일의 저장 위치 (완료 시 공유 시트로 전달)
+        private var downloadedFileURL: URL?
 
         init(onDismiss: @escaping () -> Void) {
             self.onDismiss = onDismiss
@@ -173,6 +175,73 @@ struct WebView: UIViewRepresentable {
             PushManager.shared.onTokenReady = { [weak self] token in
                 DispatchQueue.main.async { self?.sendPushToken(token: token) }
             }
+        }
+
+        // MARK: - 파일 다운로드
+        //
+        // SDK 이미지 뷰어의 다운로드 버튼은 `<a href={fileUrl} download>` 앵커입니다.
+        // `download` 속성은 **동일 오리진에서만** 동작하는데 파일 URL 은 샌드버드 CDN(다른 오리진)
+        // 이라 무시되고, 서버가 첨부로 내려주면 WKWebView 는 표시할 수 없어
+        // **아무 일도 일어나지 않습니다.** 아래 두 메서드로 다운로드로 전환해야 동작합니다.
+
+        /// 표시할 수 없는 응답(첨부 파일 등)은 다운로드로 전환합니다.
+        func webView(
+            _ webView: WKWebView,
+            decidePolicyFor navigationResponse: WKNavigationResponse,
+            decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void
+        ) {
+            if navigationResponse.canShowMIMEType {
+                decisionHandler(.allow)
+            } else {
+                decisionHandler(.download)
+            }
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            navigationResponse: WKNavigationResponse,
+            didBecome download: WKDownload
+        ) {
+            download.delegate = self
+        }
+
+        // MARK: WKDownloadDelegate
+
+        /// 임시 폴더에 저장합니다. 같은 이름이 있으면 지우고 새로 받습니다.
+        func download(
+            _ download: WKDownload,
+            decideDestinationUsing response: URLResponse,
+            suggestedFilename: String,
+            completionHandler: @escaping (URL?) -> Void
+        ) {
+            let dir = FileManager.default.temporaryDirectory.appendingPathComponent("downloads", isDirectory: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            let dest = dir.appendingPathComponent(suggestedFilename.isEmpty ? "file" : suggestedFilename)
+            try? FileManager.default.removeItem(at: dest)
+            downloadedFileURL = dest
+            completionHandler(dest)
+        }
+
+        /// 완료되면 공유 시트를 띄워 사용자가 '사진에 저장' / '파일에 저장' 을 고르게 합니다.
+        func downloadDidFinish(_ download: WKDownload) {
+            guard let url = downloadedFileURL else { return }
+            downloadedFileURL = nil
+            DispatchQueue.main.async { [weak self] in
+                guard let top = Self.topViewController() else { return }
+                let sheet = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+                // iPad 에서는 popover 앵커가 없으면 크래시합니다.
+                sheet.popoverPresentationController?.sourceView = top.view
+                sheet.popoverPresentationController?.sourceRect = CGRect(
+                    x: top.view.bounds.midX, y: top.view.bounds.midY, width: 0, height: 0
+                )
+                top.present(sheet, animated: true)
+                _ = self
+            }
+        }
+
+        func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
+            downloadedFileURL = nil
+            print("[Bridge] download 실패: \(error.localizedDescription)")
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {

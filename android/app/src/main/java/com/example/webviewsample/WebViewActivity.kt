@@ -1,15 +1,18 @@
 package com.example.webviewsample
 
+import android.app.DownloadManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.net.Uri as AndroidUri
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.webkit.JavascriptInterface
+import android.webkit.URLUtil
 import android.webkit.ValueCallback
-import android.net.Uri as AndroidUri
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.webkit.WebChromeClient
@@ -190,6 +193,13 @@ class WebViewActivity : AppCompatActivity() {
                     }
                 }
             }
+            // 파일 다운로드: 이미지 뷰어의 다운로드 버튼은 SDK 가 <a href download> 로 렌더링합니다.
+            // WebView 에는 다운로드 기능이 없어 DownloadListener 를 붙이지 않으면
+            // 버튼을 눌러도 아무 일도 일어나지 않습니다. (iOS WKWebView 도 동일)
+            setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+                startFileDownload(url, userAgent, contentDisposition, mimeType)
+            }
+
             // 파일 첨부: onShowFileChooser 를 구현하지 않으면 첨부 버튼을 눌러도
             // 파일 선택기가 열리지 않습니다. (iOS WKWebView 와의 플랫폼 차이)
             webChromeClient = object : WebChromeClient() {
@@ -227,6 +237,50 @@ class WebViewActivity : AppCompatActivity() {
             webView.goBack()
         } else {
             super.onBackPressed()
+        }
+    }
+
+    /**
+     * 메신저에서 받은 파일을 기기에 저장합니다.
+     *
+     * SDK 의 이미지 뷰어 다운로드 버튼은 `<a href={fileUrl} download>` 앵커입니다.
+     * `download` 속성은 **동일 오리진에서만** 동작하는데, 파일 URL 은 샌드버드 CDN(다른 오리진)
+     * 이라 브라우저가 속성을 무시하고 일반 이동으로 처리합니다.
+     * 그 이동을 WebView 가 받아주지 못하면 **아무 일도 일어나지 않습니다.**
+     *
+     * `DownloadManager` 에 넘기면 OS 가 알림·재시도·진행률을 모두 처리합니다.
+     */
+    private fun startFileDownload(
+        url: String,
+        userAgent: String?,
+        contentDisposition: String?,
+        mimeType: String?
+    ) {
+        val uri = runCatching { Uri.parse(url) }.getOrNull()
+        val scheme = uri?.scheme?.lowercase()
+        if (uri == null || (scheme != "http" && scheme != "https")) {
+            Log.w("Bridge", "download: 유효하지 않은 URL — $url")
+            return
+        }
+
+        // 서버가 준 Content-Disposition 과 MIME 으로 파일명을 추론합니다.
+        val fileName = URLUtil.guessFileName(url, contentDisposition, mimeType)
+
+        val request = DownloadManager.Request(uri).apply {
+            setMimeType(mimeType)
+            userAgent?.let { addRequestHeader("User-Agent", it) }
+            setTitle(fileName)
+            setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            // 공용 다운로드 폴더. Android 10(API 29) 부터는 별도 권한이 필요 없습니다.
+            setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+        }
+
+        try {
+            (getSystemService(DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
+            android.widget.Toast.makeText(this, "다운로드를 시작합니다.", android.widget.Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e("Bridge", "download: 실패", e)
+            android.widget.Toast.makeText(this, "다운로드에 실패했습니다.", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
