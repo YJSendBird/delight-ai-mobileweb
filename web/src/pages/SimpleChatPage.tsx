@@ -1,8 +1,15 @@
-import { ConversationHeaderLayout, FixedMessenger, type MessengerSessionRef } from '@sendbird/ai-agent-messenger-react';
+import {
+  ConversationHeaderLayout,
+  ConversationListHeaderLayout,
+  FixedMessenger,
+  type MessengerSessionRef,
+} from '@sendbird/ai-agent-messenger-react';
 import { ConversationStatus } from '@sendbird/chat/aiAgent';
 import { createAnonymousSessionInfo, createSessionInfo, parseAppParams } from '../utils/config';
 import { bridge } from '../libs/bridge';
 import { handleLinkClick } from '../libs/linkHandler';
+import { ConversationListBackButton } from '../components/ConversationListBackButton.tsx';
+import { ConversationListMenuButton } from '../components/ConversationListMenuButton.tsx';
 import { ActiveChannelObserver } from '../components/ActiveChannelObserver.tsx';
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { PushTokenRegister } from '../components/PushTokenRegister.tsx';
@@ -84,7 +91,13 @@ function SimpleChatPage() {
             </>
           )}
         />
+        {/* 대화 목록으로 가는 메뉴(≡) 버튼의 아이콘을 목록 모양으로 교체 */}
+        <ConversationHeaderLayout.MenuButton component={ConversationListMenuButton} />
       </FixedMessenger.ConversationChildren>
+      {/* 대화 목록 헤더의 X 버튼을 '대화 화면으로 돌아가기'로 교체 */}
+      <FixedMessenger.ConversationListChildren>
+        <ConversationListHeaderLayout.EndArea component={ConversationListBackButton} />
+      </FixedMessenger.ConversationListChildren>
       <ActiveChannelObserver onChangeActiveChannel={onChangeActiveChannel} />
       <PushTokenRegister />
     </FixedMessenger>

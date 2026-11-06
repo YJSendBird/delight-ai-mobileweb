@@ -246,6 +246,34 @@ import { UnreadCountLauncher } from '../components/UnreadCountLauncher.tsx';
 
 > 상세 내용은 `Sendbird_AIAgent_프로필아바타_테두리제거_가이드.pdf`를 참고하세요.
 
+#### 6. 대화 목록 헤더 버튼 커스터마이징
+
+헤더의 각 버튼은 **슬롯(slot) 구조**로 공개되어 있어, 자리별로 컴포넌트를 교체할 수 있습니다.
+목록 화면의 닫기(X) 버튼을 **대화 화면으로 돌아가기**로 바꾸고,
+채팅 화면의 목록 이동(≡) 아이콘을 다른 모양으로 바꾸는 예시입니다.
+
+```tsx
+<FixedMessenger ...>
+  {/* 채팅 화면 헤더 — 목록으로 가는 ≡ 아이콘 교체 */}
+  <FixedMessenger.ConversationChildren>
+    <ConversationHeaderLayout.MenuButton component={ConversationListMenuButton} />
+  </FixedMessenger.ConversationChildren>
+
+  {/* 목록 화면 헤더 — X(위젯 닫기)를 뒤로가기로 교체 */}
+  <FixedMessenger.ConversationListChildren>
+    <ConversationListHeaderLayout.EndArea component={ConversationListBackButton} />
+  </FixedMessenger.ConversationListChildren>
+</FixedMessenger>
+```
+
+- 구현: `web/src/components/ConversationListBackButton.tsx`, `web/src/components/ConversationListMenuButton.tsx`
+- 목록 헤더의 기본 X 버튼은 화면 이동이 아니라 **위젯 열림 상태를 끄는** 동작만 합니다.
+- 돌아갈 대화는 `activeChannel` → 목록 첫 번째 순으로 고르고, 둘 다 없으면 SDK 기본 닫기 버튼으로 돌아갑니다.
+- 채팅 헤더의 `onNavigateToConversationList`는 **선택적 값**이므로 `null` 체크가 필요합니다.
+- 두 블록을 바꿔 넣으면 적용되지 않습니다(`ConversationChildren` ↔ `ConversationListChildren`).
+
+> 상세 내용은 `Sendbird_AIAgent_대화목록헤더버튼_커스터마이징_가이드.pdf`를 참고하세요.
+
 ## WebView Bridge
 
 네이티브 앱과 웹 앱 간의 양방향 통신을 지원하는 브릿지입니다.
