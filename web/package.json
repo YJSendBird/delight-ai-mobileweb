@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@sendbird/ai-agent-messenger-react": "^1.42.0",
-    "@sendbird/chat": "^4.22.12",
+    "@sendbird/ai-agent-messenger-react": "^1.45.0",
+    "@sendbird/chat": "^4.22.15",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.5"
