@@ -272,6 +272,21 @@ import { UnreadCountLauncher } from '../components/UnreadCountLauncher.tsx';
 - 채팅 헤더의 `onNavigateToConversationList`는 **선택적 값**이므로 `null` 체크가 필요합니다.
 - 두 블록을 바꿔 넣으면 적용되지 않습니다(`ConversationChildren` ↔ `ConversationListChildren`).
 
+≡ 버튼을 **숨기거나 비활성화**하려면 같은 슬롯에 넣을 컴포넌트만 바꿉니다.
+`FixedMessenger`는 목록 이동 함수를 항상 주입하므로 **설정으로 끄는 방법은 없습니다.**
+
+```tsx
+// 숨김 (권장)
+<ConversationHeaderLayout.MenuButton component={HiddenMenuButton} />
+
+// 보이되 비활성
+<ConversationHeaderLayout.MenuButton component={DisabledMenuButton} />
+```
+
+- 두 컴포넌트 모두 `web/src/components/ConversationListMenuButton.tsx`에 포함돼 있습니다.
+- CSS(`display:none`)로 숨기는 방법은 권장하지 않습니다 — 고정 id가 없어 클래스 해시나 `aria-label`에 의존해야 하는데, 각각 빌드·언어 변경에 깨집니다.
+- ≡ 버튼은 **대화 목록으로 가는 유일한 경로**입니다. 숨기면 목록 화면에 접근할 수 없게 되고 위의 뒤로가기 버튼도 쓰일 일이 없어집니다. 목록을 쓰되 진입만 바꾸려면 `entryPoint`를 `'ConversationList'`로 두는 방법도 있습니다.
+
 > 상세 내용은 `Sendbird_AIAgent_대화목록헤더버튼_커스터마이징_가이드.pdf`를 참고하세요.
 
 ## WebView Bridge
