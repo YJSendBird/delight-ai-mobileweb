@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>대화 목록 헤더 버튼 커스터마이징 가이드</title>
+<style>
+  @page {
+    size: A4; margin: 20mm 18mm 20mm 18mm;
+    @bottom-left {
+      content: "Sendbird AI Agent — 대화 목록 헤더 버튼 커스터마이징 가이드";
+      font-family: "Apple SD Gothic Neo", sans-serif; font-size: 8.5pt; color: #9aa0a6;
+    }
+    @bottom-right {
+      content: counter(page) " / " counter(pages);
+      font-family: "Apple SD Gothic Neo", sans-serif; font-size: 8.5pt; color: #9aa0a6;
+    }
+  }
+  @page :first { @bottom-left { content: ""; } @bottom-right { content: ""; } }
+
+  * { box-sizing: border-box; }
+  body { font-family: "Apple SD Gothic Neo", "Helvetica Neue", sans-serif;
+         font-size: 10.5pt; line-height: 1.65; color: #202124; margin: 0; }
+
+  .cover { page-break-after: always; padding-top: 52mm; }
+  .cover .kicker { font-size: 9pt; letter-spacing: 2.4px; color: #6b4ef5;
+                   font-weight: 700; text-transform: uppercase; margin-bottom: 16px; }
+  .cover h1 { font-size: 26pt; line-height: 1.3; margin: 0 0 18px; letter-spacing: -0.5px; }
+  .cover .rule { width: 56px; height: 4px; background: #6b4ef5; margin-bottom: 28px; }
+  .cover .sub { font-size: 11.5pt; color: #5f6368; line-height: 1.8; margin-bottom: 40px; }
+  .cover .meta { font-size: 9.5pt; color: #80868b; line-height: 1.95; }
+
+  .toc { page-break-after: always; }
+  .toc h2 { border: none; margin-bottom: 16px; }
+  .toc ol { list-style: none; padding-left: 0; counter-reset: c; }
+  .toc > ol > li { counter-increment: c; margin: 10px 0; font-size: 11pt; font-weight: 600; }
+  .toc > ol > li::before { content: counter(c) ". "; color: #6b4ef5; }
+  .toc ol ol { padding-left: 18px; counter-reset: s; margin: 5px 0; }
+  .toc ol ol li { counter-increment: s; font-size: 10pt; font-weight: 400; color: #5f6368; margin: 4px 0; }
+  .toc ol ol li::before { content: counter(c) "." counter(s) " "; color: #9aa0a6; }
+
+  h2 { font-size: 15pt; margin: 28px 0 13px; padding-bottom: 8px;
+       border-bottom: 2px solid #e8eaed; letter-spacing: -0.3px; page-break-after: avoid; }
+  h2 .num { display: inline-block; min-width: 26px; height: 26px; line-height: 26px;
+            text-align: center; background: #6b4ef5; color: #fff; border-radius: 7px;
+            font-size: 11pt; margin-right: 10px; vertical-align: 2px; }
+  h3 { font-size: 11.5pt; margin: 20px 0 7px; color: #3c4043; page-break-after: avoid; }
+  p { margin: 9px 0; }
+  ul, ol { margin: 9px 0; padding-left: 20px; }
+  li { margin: 5px 0; }
+  strong { color: #1a1a1a; }
+  code { font-family: "SF Mono", Menlo, monospace; font-size: 9.3pt;
+         background: #f1f3f4; padding: 1px 5px; border-radius: 4px; }
+  pre { background: #1e1e20; color: #e6e6e6; border-radius: 8px; padding: 12px 14px;
+        font-family: "SF Mono", Menlo, monospace; font-size: 8.3pt; line-height: 1.6;
+        white-space: pre-wrap; word-break: break-all; page-break-inside: auto; }
+  pre .c { color: #7fae6a; }
+  pre .k { color: #d6a0ff; }
+  pre .bad { color: #ff8e8e; }
+
+  .lead { background: #f7f5ff; border-left: 4px solid #6b4ef5;
+          padding: 14px 18px; margin: 16px 0 24px; line-height: 1.75; }
+  .note, .warn, .ok { border-radius: 8px; padding: 12px 16px; margin: 13px 0;
+                      font-size: 10pt; page-break-inside: avoid; }
+  .note { background: #f8f9fa; border: 1px solid #e8eaed; }
+  .warn { background: #fff8e6; border: 1px solid #f6d57a; }
+  .ok   { background: #effaf1; border: 1px solid #a8dfb4; }
+  .note .t, .warn .t, .ok .t { font-weight: 700; display: block; margin-bottom: 4px; }
+  .warn .t { color: #a6730b; } .ok .t { color: #1e7a32; } .note .t { color: #3c4043; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.7pt; }
+  th, td { border: 1px solid #e0e0e0; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f8f9fa; font-weight: 700; }
+  td.q { width: 30%; font-weight: 600; }
+  .disclaimer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #e8eaed;
+                font-size: 9pt; color: #80868b; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="kicker">Sendbird AI Agent · Messenger SDK</div>
+  <h1>대화 목록 헤더<br>버튼 커스터마이징 가이드</h1>
+  <div class="rule"></div>
+  <div class="sub">
+    목록 화면의 <strong>닫기(X)</strong> → <strong>대화 화면으로 돌아가기</strong><br>
+    채팅 화면의 <strong>목록 이동(≡)</strong> 아이콘 변경 · 숨김 · 비활성화
+  </div>
+  <div class="meta">
+    대상 기능 &nbsp;·&nbsp; 헤더 슬롯 교체 (ConversationHeaderLayout / ConversationListHeaderLayout)<br>
+    기준 버전 &nbsp;·&nbsp; @sendbird/ai-agent-messenger-react v1.45.0<br>
+    문서 개정 &nbsp;·&nbsp; 2026-11-09 (숨김 적용 시 깜빡임 검증 내용 추가)
+  </div>
+</section>
+
+<section class="toc">
+  <h2>목차</h2>
+  <ol>
+    <li>요청 내용과 결론</li>
+    <li>SDK 헤더 구조
+      <ol>
+        <li>두 개의 화면과 두 개의 헤더</li>
+        <li>헤더 슬롯 교체 방식</li>
+        <li>교체 가능한 슬롯 목록</li>
+      </ol>
+    </li>
+    <li>목록 헤더 — 닫기(X)를 뒤로가기로
+      <ol>
+        <li>기본 동작</li>
+        <li>돌아갈 대화를 정하는 API</li>
+        <li>구현 코드</li>
+      </ol>
+    </li>
+    <li>채팅 헤더 — 목록 이동(≡) 아이콘 변경
+      <ol>
+        <li>기본 동작</li>
+        <li>구현 코드</li>
+      </ol>
+    </li>
+    <li>채팅 헤더 — 목록 이동(≡) 숨기기 · 비활성화
+      <ol>
+        <li>설정으로는 끌 수 없습니다</li>
+        <li>숨기기 (권장)</li>
+        <li>비활성화</li>
+        <li>CSS로 숨기면 안 되는 이유</li>
+        <li>버튼이 잠깐 보였다 사라진다면</li>
+      </ol>
+    </li>
+    <li>메신저에 연결</li>
+    <li>동작 확인 결과</li>
+    <li>구현 시 유의 사항</li>
+  </ol>
+</section>
+
+<h2><span class="num">1</span>요청 내용과 결론</h2>
+
+<div class="lead">
+  <strong>요청</strong> — ① 대화 목록 화면 상단 헤더의 <code>X</code> 버튼을 누르면 위젯이 닫히는데,
+  닫는 대신 <strong>직전 채팅 화면으로 돌아가게</strong> 하고 싶다.
+  ② 채팅 화면에서 <strong>목록으로 들어가는 ≡ 아이콘</strong>도 다른 모양으로 바꾸고 싶다.
+  ③ 경우에 따라 그 아이콘을 <strong>숨기거나 비활성화</strong>하고 싶다.
+</div>
+
+<p>
+  <strong>결론: 세 건 모두 커스텀 작업이 필요하며, 모두 구현 가능합니다.</strong>
+  동작이나 아이콘을 바꾸는 설정값은 SDK에 없습니다.
+  다만 SDK가 헤더를 <strong>슬롯(slot) 구조</strong>로 공개하고 있어서,
+  해당 자리의 컴포넌트를 통째로 교체하는 방식으로 구현합니다.
+  SDK를 수정하거나 내부 구현에 의존할 필요는 없고, <strong>웹(React) 코드만</strong> 수정하면 됩니다.
+</p>
+
+<table>
+  <tr><td class="q">설정으로 가능한가</td><td>아니오 — 관련 설정값이 없습니다.</td></tr>
+  <tr><td class="q">필요한 작업</td><td>웹(React) 컴포넌트 추가 + 메신저에 슬롯 연결 2줄<br>(숨김·비활성은 넣을 컴포넌트만 교체)</td></tr>
+  <tr><td class="q">네이티브 수정</td><td>불필요 (Android / iOS 모두 변경 없음)</td></tr>
+  <tr><td class="q">사용하는 API</td><td>모두 SDK가 공개(export)하는 공식 API</td></tr>
+</table>
+
+<h2><span class="num">2</span>SDK 헤더 구조</h2>
+
+<h3>2.1 두 개의 화면과 두 개의 헤더</h3>
+
+<p>
+  메신저 위젯 안에는 화면이 두 개 있고, 헤더도 각각 따로 있습니다.
+  두 헤더는 서로 다른 레이아웃 컴포넌트를 쓰기 때문에
+  <strong>한쪽만 골라서 바꿀 수 있습니다.</strong>
+</p>
+
+<table>
+  <tr><th>화면</th><th>헤더 컴포넌트</th><th>이번에 바꿀 버튼</th></tr>
+  <tr>
+    <td>대화(채팅) 화면</td>
+    <td><code>ConversationHeaderLayout</code></td>
+    <td>왼쪽 <strong>≡ 메뉴 버튼</strong> → 아이콘 변경 · 숨김</td>
+  </tr>
+  <tr>
+    <td>대화 목록 화면</td>
+    <td><code>ConversationListHeaderLayout</code></td>
+    <td>오른쪽 <strong>X 닫기 버튼</strong> → 뒤로가기로 교체</td>
+  </tr>
+</table>
+
+<h3>2.2 헤더 슬롯 교체 방식</h3>
+
+<p>
+  SDK는 헤더의 각 자리를 이름 붙은 슬롯으로 공개하고 있습니다.
+  바꾸고 싶은 슬롯에 <code>component</code> 로 내 컴포넌트를 넘기면 그 자리만 교체됩니다.
+</p>
+
+<pre><span class="c">// 목록 화면 헤더의 오른쪽 영역 교체</span>
+&lt;ConversationListHeaderLayout.EndArea component={MyBackButton} /&gt;
+
+<span class="c">// 채팅 화면 헤더의 메뉴 버튼 교체</span>
+&lt;ConversationHeaderLayout.MenuButton component={MyMenuButton} /&gt;</pre>
+
+<p>
+  교체했더라도 <strong>원래의 기본 컴포넌트가 필요할 때는 다시 꺼내 쓸 수 있습니다.</strong>
+  아래 경로로 SDK 기본 구현에 그대로 접근합니다.
+</p>
+
+<pre>ConversationListHeaderLayout.defaults.components.CloseButton
+ConversationHeaderLayout.defaults.components.MenuButton</pre>
+
+<h3>2.3 교체 가능한 슬롯 목록</h3>
+
+<p>참고로 <code>ConversationHeaderLayout</code>(채팅 화면 헤더)이 공개하는 슬롯은 다음과 같습니다.</p>
+
+<table>
+  <tr><th>슬롯</th><th>자리</th></tr>
+  <tr><td><code>StartArea</code></td><td>헤더 왼쪽 영역 전체</td></tr>
+  <tr><td><code>MenuButton</code></td><td>대화 목록으로 가는 ≡ 버튼</td></tr>
+  <tr><td><code>TitleArea</code> / <code>Title</code></td><td>가운데 제목 영역</td></tr>
+  <tr><td><code>EndArea</code></td><td>헤더 오른쪽 영역 전체</td></tr>
+  <tr><td><code>HandoffButton</code></td><td>상담사 연결 버튼</td></tr>
+  <tr><td><code>ConversationCloseButton</code></td><td>대화 종료 버튼</td></tr>
+  <tr><td><code>ExpandButton</code></td><td>메신저 확장 버튼</td></tr>
+  <tr><td><code>CloseButton</code></td><td>위젯 닫기 버튼</td></tr>
+  <tr><td><code>MemoryIndicator</code></td><td>메모리 표시</td></tr>
+</table>
+
+<div class="note">
+  <span class="t">영역 전체 vs 버튼 하나</span>
+  <code>EndArea</code> 처럼 영역을 통째로 교체하면 그 안의 기본 버튼들이 모두 사라집니다.
+  버튼 하나만 바꾸고 싶다면 <code>MenuButton</code> 같은 <strong>개별 슬롯</strong>을 쓰는 편이 안전합니다.
+</div>
+
+<h2><span class="num">3</span>목록 헤더 — 닫기(X)를 뒤로가기로</h2>
+
+<h3>3.1 기본 동작</h3>
+
+<p>
+  SDK의 목록 헤더 닫기 버튼은 <strong>위젯 열림 상태를 false 로 만드는</strong> 동작만 합니다.
+  화면 이동(navigation)과는 무관하므로, 눌렀을 때 위젯 자체가 사라집니다.
+</p>
+
+<pre><span class="c">// SDK 내부 — ConversationListHeaderLayout 의 기본 CloseButton</span>
+<span class="k">const</span> CloseButton = () => {
+  <span class="k">const</span> { state } = useMessengerContext();
+  <span class="k">return</span> &lt;IconButton type="close" onClick={() => state.setOpened(<span class="bad">false</span>)} /&gt;;
+};</pre>
+
+<div class="note">
+  <span class="t">참고</span>
+  목록 화면으로 들어가는 경로는 헤더 왼쪽의 <strong>메뉴(≡)</strong> 버튼입니다.
+  즉 사용자는 <em>채팅 → 메뉴 → 목록</em> 순서로 이동했는데, 목록에서 나가는 버튼이
+  <em>뒤로</em>가 아니라 <em>닫기</em>로 되어 있어 흐름이 끊긴다는 것이 이번 요청의 배경입니다.
+</div>
+
+<h3>3.2 돌아갈 대화를 정하는 API</h3>
+
+<table>
+  <tr><th>API</th><th>용도</th></tr>
+  <tr>
+    <td><code>useConversationListContext()</code><br>→ <code>onOpenConversationView(url, status)</code></td>
+    <td>지정한 대화의 채팅 화면으로 이동</td>
+  </tr>
+  <tr>
+    <td><code>useConversationListContext()</code><br>→ <code>listSource.channels</code></td>
+    <td>현재 목록에 로드된 대화 배열</td>
+  </tr>
+  <tr>
+    <td><code>useMessengerSessionContext()</code><br>→ <code>activeChannel</code></td>
+    <td>직전까지 보고 있던 대화</td>
+  </tr>
+</table>
+
+<p>
+  돌아갈 대화는 <strong>① 직전에 보던 대화(<code>activeChannel</code>) → ② 목록의 첫 번째 대화</strong>
+  순으로 고르면 자연스럽습니다. 둘 다 없는 경우(대화 이력이 하나도 없는 신규 사용자)에는
+  돌아갈 곳이 없으므로 <strong>SDK 기본 닫기 버튼을 그대로 보여주는</strong> 편이 안전합니다.
+  화살표만 띄워 두면 눌러도 아무 일이 일어나지 않아 오히려 혼란스럽기 때문입니다.
+</p>
+
+<h3>3.3 구현 코드</h3>
+
+<p><code>web/src/components/ConversationListBackButton.tsx</code></p>
+
+<pre><span class="k">import</span> {
+  ConversationListHeaderLayout,
+  useConversationListContext,
+  useMessengerSessionContext,
+} <span class="k">from</span> '@sendbird/ai-agent-messenger-react';
+
+<span class="k">export function</span> ConversationListBackButton() {
+  <span class="k">const</span> { onOpenConversationView, listSource } = useConversationListContext();
+  <span class="k">const</span> { activeChannel } = useMessengerSessionContext();
+
+  <span class="c">// 돌아갈 대화 결정 — 직전에 보던 대화 우선, 없으면 목록의 첫 번째</span>
+  <span class="k">const</span> first = listSource.channels[0];
+  <span class="k">const</span> target = activeChannel
+    ? { url: activeChannel.url, status: activeChannel.status }
+    : first
+      ? { url: first.url,
+          status: (first.conversation?.status === 'closed' ? 'closed' : 'open') <span class="k">as</span> 'open' | 'closed' }
+      : <span class="k">null</span>;
+
+  <span class="c">// 돌아갈 대화가 없으면 SDK 기본 동작(위젯 닫기)을 그대로 둡니다.</span>
+  <span class="k">if</span> (!target) {
+    <span class="k">return</span> &lt;ConversationListHeaderLayout.defaults.components.CloseButton /&gt;;
+  }
+
+  <span class="k">return</span> (
+    &lt;button
+      type="button"
+      aria-label="대화 화면으로 돌아가기"
+      onClick={() => onOpenConversationView(target.url, target.status)}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+               width: 32, height: 32, padding: 0, border: 'none',
+               background: 'transparent', cursor: 'pointer', color: 'inherit' }}
+    &gt;
+      <span class="c">{/* 닫기(X) 대신 '뒤로' 의미가 드러나도록 화살표를 씁니다. */}</span>
+      &lt;svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" strokeWidth="2"
+           strokeLinecap="round" strokeLinejoin="round"&gt;
+        &lt;polyline points="15 18 9 12 15 6" /&gt;
+      &lt;/svg&gt;
+    &lt;/button&gt;
+  );
+}</pre>
+
+<h2><span class="num">4</span>채팅 헤더 — 목록 이동(≡) 아이콘 변경</h2>
+
+<h3>4.1 기본 동작</h3>
+
+<p>
+  채팅 화면 헤더 왼쪽의 ≡ 버튼은 <code>useConversationContext()</code> 가 제공하는
+  <code>onNavigateToConversationList()</code> 를 호출해 목록 화면으로 이동합니다.
+  이 함수가 없는 구성(목록 기능을 쓰지 않는 경우)에서는 <strong>버튼 자체를 렌더링하지 않습니다.</strong>
+</p>
+
+<table>
+  <tr><th>API</th><th>용도</th></tr>
+  <tr>
+    <td><code>useConversationContext()</code><br>→ <code>onNavigateToConversationList()</code></td>
+    <td>대화 목록 화면으로 이동</td>
+  </tr>
+</table>
+
+<div class="warn">
+  <span class="t">없을 수 있는 함수입니다</span>
+  <code>onNavigateToConversationList</code> 는 <strong>선택적(optional)</strong> 값입니다.
+  커스텀 버튼에서도 <code>if (!onNavigateToConversationList) return null;</code> 처리를 반드시 넣어
+  SDK 기본 동작과 동일하게 맞춰 주세요. 빠뜨리면 목록 기능이 꺼진 구성에서
+  <strong>눌러도 아무 일이 없는 버튼</strong>이 노출됩니다.
+</div>
+
+<h3>4.2 구현 코드</h3>
+
+<p><code>web/src/components/ConversationListMenuButton.tsx</code></p>
+
+<pre><span class="k">import</span> { useConversationContext } <span class="k">from</span> '@sendbird/ai-agent-messenger-react';
+
+<span class="k">export function</span> ConversationListMenuButton() {
+  <span class="k">const</span> { onNavigateToConversationList } = useConversationContext();
+
+  <span class="c">// 목록 기능이 꺼진 구성에서는 SDK 기본 동작과 동일하게 아무것도 그리지 않습니다.</span>
+  <span class="k">if</span> (!onNavigateToConversationList) <span class="k">return null</span>;
+
+  <span class="k">return</span> (
+    &lt;button
+      type="button"
+      aria-label="대화 목록 열기"
+      onClick={() => onNavigateToConversationList()}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+               width: 32, height: 32, padding: 0, border: 'none',
+               background: 'transparent', cursor: 'pointer', color: 'inherit' }}
+    &gt;
+      <span class="c">{/* 햄버거(≡) 대신 '목록' 의미가 드러나는 아이콘을 씁니다. */}</span>
+      &lt;svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" strokeWidth="2"
+           strokeLinecap="round" strokeLinejoin="round"&gt;
+        &lt;line x1="9" y1="6" x2="20" y2="6" /&gt;
+        &lt;line x1="9" y1="12" x2="20" y2="12" /&gt;
+        &lt;line x1="9" y1="18" x2="20" y2="18" /&gt;
+        &lt;circle cx="4.5" cy="6" r="1.3" fill="currentColor" stroke="none" /&gt;
+        &lt;circle cx="4.5" cy="12" r="1.3" fill="currentColor" stroke="none" /&gt;
+        &lt;circle cx="4.5" cy="18" r="1.3" fill="currentColor" stroke="none" /&gt;
+      &lt;/svg&gt;
+    &lt;/button&gt;
+  );
+}</pre>
+
+<div class="note">
+  <span class="t">이미지 아이콘을 쓰고 싶다면</span>
+  <code>&lt;svg&gt;</code> 자리에 <code>&lt;img src="/icons/list.svg" width={22} height={22} alt="" /&gt;</code> 처럼
+  이미지를 넣어도 됩니다. 다만 이미지로 바꾸면 <code>color: 'inherit'</code> 에 의한
+  <strong>테마 색 자동 추종이 동작하지 않으므로</strong>, 다크 테마를 함께 쓴다면
+  테마별 이미지를 따로 준비해야 합니다.
+</div>
+
+<h2><span class="num">5</span>채팅 헤더 — 목록 이동(≡) 숨기기 · 비활성화</h2>
+
+<h3>5.1 설정으로는 끌 수 없습니다</h3>
+
+<p>
+  먼저 확인해 둘 점이 있습니다. <code>FixedMessenger</code> 는 대화 화면에
+  <strong>목록 이동 함수를 항상 주입합니다.</strong> 번들을 확인해 보면 조건 분기 없이
+  무조건 전달됩니다.
+</p>
+
+<pre><span class="c">// SDK 내부 — FixedMessenger 의 화면 구성</span>
+&lt;Conversation
+  onNavigateToConversationList={() => { ... navigate(convList); }}   <span class="c">// 항상 주입</span>
+  ... /&gt;</pre>
+
+<p>
+  SDK 기본 <code>MenuButton</code> 은 이 함수가 <strong>없을 때만</strong> 버튼을 그리지 않습니다.
+  그런데 <code>FixedMessenger</code> 에서는 그 조건이 성립하지 않으므로,
+  <strong>≡ 버튼을 끄는 설정값은 존재하지 않습니다.</strong>
+</p>
+
+<pre><span class="c">// SDK 기본 MenuButton — 함수가 없을 때만 숨겨짐</span>
+<span class="k">const</span> MenuButton = () => {
+  <span class="k">const</span> { onNavigateToConversationList } = useConversationContext();
+  <span class="k">if</span> (!onNavigateToConversationList) <span class="k">return null</span>;   <span class="c">// FixedMessenger 에서는 해당 없음</span>
+  ...
+};</pre>
+
+<div class="note">
+  <span class="t">참고</span>
+  대시보드의 <code>다중 대화 허용</code> 설정(<code>is_multiple_active_conversations_enabled</code>)은
+  <strong>이 버튼과 무관합니다.</strong> 그 값은 "대화 시작" 시 새 대화를 만들지 기존 대화를 이어갈지를
+  정할 뿐이고, 헤더 버튼 노출에는 관여하지 않습니다.
+</div>
+
+<p>
+  따라서 <strong>4장과 같은 슬롯 교체 방식</strong>으로 처리합니다.
+  바꿔 넣을 컴포넌트만 다릅니다.
+</p>
+
+<h3>5.2 숨기기 (권장)</h3>
+
+<p>슬롯에 <code>null</code> 을 반환하는 컴포넌트를 넣으면 버튼 자리가 사라집니다.</p>
+
+<pre><span class="k">const</span> Empty = () => <span class="k">null</span>;
+
+&lt;FixedMessenger appId={APP_ID} aiAgentId={AI_AGENT_ID} ...&gt;
+  &lt;FixedMessenger.ConversationChildren&gt;
+    &lt;ConversationHeaderLayout.MenuButton component={Empty} /&gt;
+  &lt;/FixedMessenger.ConversationChildren&gt;
+&lt;/FixedMessenger&gt;</pre>
+
+<p>
+  이것이 전부입니다. 헤더의 나머지 버튼(최소화 · 확장 · 닫기)은 그대로 유지되고,
+  왼쪽 영역만 비워집니다.
+</p>
+
+<div class="warn">
+  <span class="t">컴포넌트를 JSX 안에서 만들지 마세요</span>
+  <code>component={() =&gt; null}</code> 처럼 인라인으로 쓰면
+  렌더할 때마다 <strong>새 함수가 되어 슬롯이 매번 다시 등록됩니다.</strong>
+  위 예시처럼 <code>Empty</code> 를 컴포넌트 바깥에 <strong>한 번만</strong> 선언해서 넘기세요.
+</div>
+
+<div class="note">
+  <span class="t">두 곳을 혼동하지 마세요</span>
+  반드시 <code>FixedMessenger.ConversationChildren</code>(채팅 화면) 안에 넣어야 합니다.
+  <code>ConversationListChildren</code>(목록 화면)에 넣으면 적용되지 않습니다.
+</div>
+
+<h3>5.3 비활성화</h3>
+
+<p>
+  버튼은 보이되 누를 수 없게 하려면 <code>disabled</code> 버튼을 넣습니다.
+  헤더 레이아웃을 그대로 유지해야 할 때만 쓰세요.
+</p>
+
+<pre><span class="k">export function</span> DisabledMenuButton() {
+  <span class="k">return</span> (
+    &lt;button
+      type="button"
+      disabled
+      aria-label="대화 목록 열기 (사용할 수 없음)"
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+               width: 32, height: 32, padding: 0, border: 'none',
+               background: 'transparent', color: 'inherit',
+               opacity: 0.35, cursor: 'not-allowed' }}
+    &gt;
+      &lt;svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" strokeWidth="2"
+           strokeLinecap="round" strokeLinejoin="round"&gt;
+        &lt;line x1="4" y1="6" x2="20" y2="6" /&gt;
+        &lt;line x1="4" y1="12" x2="20" y2="12" /&gt;
+        &lt;line x1="4" y1="18" x2="20" y2="18" /&gt;
+      &lt;/svg&gt;
+    &lt;/button&gt;
+  );
+}</pre>
+
+<div class="warn">
+  <span class="t">특별한 이유가 없다면 숨기기를 권합니다</span>
+  눌러도 아무 일이 없는 버튼은 사용자에게 <strong>고장으로 읽힙니다.</strong>
+  비활성 상태가 일시적이고 곧 다시 열릴 예정일 때만 쓰시고,
+  영구적으로 막을 것이라면 5.2 의 숨기기를 쓰세요.<br><br>
+  비활성으로 두실 경우 <code>aria-label</code> 에 <strong>사용할 수 없다는 사실을 함께</strong> 적어 주세요.
+  <code>disabled</code> 속성만으로는 스크린 리더 사용자가 "왜" 막혔는지 알 수 없습니다.
+</div>
+
+<h3>5.4 CSS로 숨기면 안 되는 이유</h3>
+
+<p>
+  <code>display: none</code> 으로 가리는 방법이 떠오를 수 있지만 권장하지 않습니다.
+  이 버튼에는 <strong>SDK가 보장하는 고정 id가 없어서</strong>,
+  선택자를 만들려면 아래 둘 중 하나에 의존해야 합니다.
+</p>
+
+<table>
+  <tr><th>선택 방법</th><th>문제</th></tr>
+  <tr>
+    <td>클래스명 (<code>.sc-xxxx</code>)</td>
+    <td>styled-components 해시라 <strong>빌드마다 바뀝니다.</strong></td>
+  </tr>
+  <tr>
+    <td><code>[aria-label="메뉴"]</code></td>
+    <td>레이블은 <strong>언어 설정에 따라 바뀝니다.</strong> 다국어 환경에서 깨집니다.</td>
+  </tr>
+</table>
+
+<p>
+  둘 다 SDK 업데이트나 언어 변경에 쉽게 깨집니다.
+  슬롯 교체는 <strong>SDK가 공개한 공식 경로</strong>이므로 이런 위험이 없습니다.
+</p>
+
+<div class="warn">
+  <span class="t">깜빡임의 원인이 되기도 합니다</span>
+  CSS 로 숨기면 스타일이 적용되기 전 <strong>한 프레임이 그대로 보이고</strong>,
+  그 뒤 버튼 폭이 접히면서 <strong>헤더 영역이 줄어드는 움직임</strong>이 눈에 띕니다.
+  <code>useEffect</code> 안에서 <code>querySelector</code> 로 DOM 을 직접 제거하는 방식도 같은 문제가 있습니다
+  (페인트 이후에 실행되기 때문입니다). 자세한 내용은 5.5 를 참고하세요.
+</div>
+
+<div class="warn">
+  <span class="t">숨기기 전에 확인하세요</span>
+  ≡ 버튼은 <strong>대화 목록으로 들어가는 유일한 경로</strong>입니다.
+  이 버튼을 숨기면 사용자는 목록 화면에 접근할 수 없게 되고,
+  <strong>3장의 목록 헤더 뒤로가기 버튼도 쓰일 일이 없어집니다.</strong><br><br>
+  목록 자체는 쓰되 진입 경로만 바꾸고 싶다면, 버튼을 숨기는 대신
+  <code>entryPoint</code> 를 <code>'ConversationList'</code> 로 두어
+  <strong>목록을 첫 화면으로</strong> 띄우는 방법도 있습니다.
+</div>
+
+<h3>5.5 버튼이 잠깐 보였다 사라진다면</h3>
+
+<p>
+  "채팅창이 열릴 때 ≡ 버튼이 한 번 보였다가 사라진다"는 문의가 있었습니다.
+  먼저 <strong>구조상 어떤 일이 일어나는지</strong> 정리합니다.
+</p>
+
+<p>
+  SDK 기본 <code>MenuButton</code> 이 먼저 렌더되고, 그 다음 슬롯이 교체합니다.
+  즉 <strong>DOM 에는 기본 ≡ 가 잠깐 들어왔다가 빠지는 것이 맞습니다.</strong>
+  이 순서 자체는 피할 수 없습니다.
+</p>
+
+<p>
+  다만 SDK 는 이 교체를 <code>useLayoutEffect</code> 에서 수행합니다.
+  <strong>브라우저가 화면을 그리기 직전에 교체가 끝나므로, 기본 ≡ 는 화면에 그려지지 않습니다.</strong>
+</p>
+
+<pre><span class="c">// SDK 슬롯 등록부 — v1.42.0 / v1.45.0 동일</span>
+s[slotName] = function ({ component }) {
+  <span class="k">const</span> { updateComponent } = useContext(ctx);
+  useLayoutEffect(() => { component && updateComponent(slotName, component); }, [component]);
+  <span class="k">return null</span>;
+};</pre>
+
+<p>실제로 프레임 단위로 측정한 결과입니다. 5.2 를 적용한 상태입니다.</p>
+
+<table>
+  <tr><th>측정 환경</th><th>기본 ≡ 가 <strong>화면에 그려진</strong> 프레임</th></tr>
+  <tr><td>Chrome — 데스크톱 레이아웃</td><td>0 / 358</td></tr>
+  <tr><td>Chrome — 모바일 레이아웃</td><td>0 / 720</td></tr>
+  <tr><td><strong>iOS 27 WKWebView</strong> (웹뷰 진입과 동시에 채팅창 열림)</td><td><strong>0 / 349</strong></td></tr>
+</table>
+
+<div class="ok">
+  <span class="t">5.2 방식 자체는 깜빡이지 않습니다</span>
+  세 환경 모두 기본 ≡ 가 그려진 프레임이 <strong>0</strong> 이었습니다.
+  DOM 교체는 일어나지만(측정 로그상 <code>removed(메뉴)</code> 발생), 페인트 전에 끝납니다.
+</div>
+
+<p><strong>그래도 눈에 보인다면</strong> 아래를 순서대로 확인해 주세요.</p>
+
+<table>
+  <tr><th>확인할 것</th><th>왜</th></tr>
+  <tr>
+    <td>CSS 로도 함께 숨기고 있지 않은지</td>
+    <td>스타일 적용 전 한 프레임이 보이고 <strong>폭이 접히며 영역이 줄어듭니다.</strong></td>
+  </tr>
+  <tr>
+    <td><code>useEffect</code> 로 DOM 을 직접 제거하지 않는지</td>
+    <td>페인트 <strong>이후</strong>에 실행되므로 반드시 한 번 보입니다.</td>
+  </tr>
+  <tr>
+    <td>슬롯을 조건부로 렌더하지 않는지</td>
+    <td><code>{ready &amp;&amp; &lt;...MenuButton ... /&gt;}</code> 형태면 <code>ready</code> 전까지 기본 버튼이 보입니다.</td>
+  </tr>
+  <tr>
+    <td><code>component</code> 에 인라인 함수를 넘기지 않는지</td>
+    <td>렌더마다 새 함수가 되어 슬롯이 반복 등록됩니다. (5.2 주의 사항)</td>
+  </tr>
+  <tr>
+    <td>슬롯이 <code>ConversationChildren</code> 안에 있는지</td>
+    <td>위치가 다르면 교체 자체가 적용되지 않습니다.</td>
+  </tr>
+</table>
+
+<h4 style="font-size:11pt;margin:18px 0 6px;color:#3c4043;">직접 측정하는 방법</h4>
+
+<p>
+  아래 스크립트를 페이지 <code>&lt;head&gt;</code> 맨 위에,
+  <strong>앱 번들보다 먼저</strong> 넣고 채팅창을 열어 보세요.
+</p>
+
+<pre>&lt;script&gt;
+  window.__frames = []; var t0 = performance.now();
+  (<span class="k">function</span> tick() {
+    <span class="k">var</span> w = document.getElementById('sb-agent-window'), menu = <span class="k">null</span>;
+    <span class="k">if</span> (w) {
+      <span class="k">var</span> bs = w.querySelectorAll('button');
+      <span class="k">for</span> (<span class="k">var</span> i = 0; i &lt; bs.length; i++) {
+        <span class="k">var</span> l = bs[i].getAttribute('aria-label') || '';
+        <span class="k">if</span> (l.indexOf('메뉴') &gt;= 0) { menu = l; <span class="k">break</span>; }
+      }
+    }
+    window.__frames.push({ vis: w ? getComputedStyle(w).visibility : <span class="k">null</span>, menu: menu });
+    <span class="k">if</span> (performance.now() - t0 &lt; 8000) requestAnimationFrame(tick);
+  })();
+&lt;/script&gt;</pre>
+
+<p>채팅창을 연 뒤 콘솔에서 확인합니다.</p>
+
+<pre>window.__frames.filter(f => f.vis === 'visible' &amp;&amp; f.menu).length</pre>
+
+<table>
+  <tr><th>결과</th><th>해석</th></tr>
+  <tr><td><code>0</code></td><td>화면에는 그려지지 않았습니다. 보이는 것은 다른 원인입니다.</td></tr>
+  <tr><td><code>1</code> 이상</td><td>실제로 그려졌습니다. 위 점검 목록을 확인하세요.</td></tr>
+</table>
+
+<h4 style="font-size:11pt;margin:18px 0 6px;color:#3c4043;">확실한 회피책 — 미리 마운트하기</h4>
+
+<p>
+  메신저를 <strong>채팅창을 열 때 마운트하지 말고</strong>, 미리 마운트해 두고
+  <strong>노출 여부만 토글</strong>하세요. 교체가 <strong>아직 보이지 않는 동안</strong> 끝납니다.
+</p>
+
+<pre><span class="c">// 권장 — 항상 마운트해 두고 opened 로 노출만 제어</span>
+<span class="k">const</span> [opened, setOpened] = useState(<span class="bad">false</span>);
+
+&lt;FixedMessenger state={{ opened, setOpened }} ...&gt;
+  &lt;FixedMessenger.ConversationChildren&gt;
+    &lt;ConversationHeaderLayout.MenuButton component={Empty} /&gt;
+  &lt;/FixedMessenger.ConversationChildren&gt;
+&lt;/FixedMessenger&gt;</pre>
+
+<div class="note">
+  <span class="t">측정으로 확인한 차이</span>
+  미리 마운트한 구성에서는 교체 시점의 창 상태가 <code>visibility: hidden</code> 이었습니다.
+  반대로 <strong>마운트와 동시에 여는</strong> 구성(<code>useState(true)</code>)에서는
+  <code>visible</code> 상태에서 교체가 일어납니다.
+  (앞의 측정에서는 두 경우 모두 그려진 프레임이 0 이었지만,
+  기기나 네트워크가 느려 렌더가 여러 단계로 나뉘면 후자가 불리합니다.)<br><br>
+  웹뷰 진입과 동시에 띄워야 한다면, 마운트와 노출 사이를 <strong>한 틱만 벌려도</strong> 같은 효과를 얻습니다.
+</div>
+
+<h2><span class="num">6</span>메신저에 연결</h2>
+
+<p><code>web/src/pages/SimpleChatPage.tsx</code></p>
+
+<pre>&lt;FixedMessenger ...&gt;
+  <span class="c">{/* 채팅 화면 헤더 — 아래 셋 중 하나를 넣습니다.
+      ConversationListMenuButton : 아이콘만 교체  (4장)
+      Empty / HiddenMenuButton   : 버튼 숨김      (5.2)
+      DisabledMenuButton         : 보이되 비활성  (5.3)  */}</span>
+  &lt;FixedMessenger.ConversationChildren&gt;
+    &lt;ConversationHeaderLayout.MenuButton component={ConversationListMenuButton} /&gt;
+  &lt;/FixedMessenger.ConversationChildren&gt;
+
+  <span class="c">{/* 대화 목록 화면 헤더 */}</span>
+  &lt;FixedMessenger.ConversationListChildren&gt;
+    &lt;ConversationListHeaderLayout.EndArea component={ConversationListBackButton} /&gt;
+  &lt;/FixedMessenger.ConversationListChildren&gt;
+&lt;/FixedMessenger&gt;</pre>
+
+<div class="warn">
+  <span class="t">슬롯을 넣는 위치에 주의하세요</span>
+  두 블록을 바꿔 넣으면 적용되지 않습니다.<br>
+  · 채팅 화면 헤더 → <code>FixedMessenger.ConversationChildren</code><br>
+  · 목록 화면 헤더 → <code>FixedMessenger.ConversationListChildren</code>
+</div>
+
+<h2><span class="num">7</span>동작 확인 결과</h2>
+
+<p>샘플 앱에 위 코드를 적용하고 실제로 확인한 결과입니다.</p>
+
+<table>
+  <tr><th>확인 항목</th><th>결과</th></tr>
+  <tr><td>채팅 화면 헤더 왼쪽</td><td>≡ 대신 목록 아이콘 표시</td></tr>
+  <tr><td>목록 아이콘 클릭 시</td><td>대화 목록 화면으로 정상 이동</td></tr>
+  <tr><td>목록 화면 헤더 오른쪽</td><td><code>X</code> 대신 <code>&lt;</code> (뒤로) 아이콘 표시</td></tr>
+  <tr><td><code>&lt;</code> 클릭 시</td><td>위젯이 닫히지 않고 <strong>직전 채팅 화면으로 복귀</strong></td></tr>
+  <tr><td>복귀 후 상태</td><td>기존 대화 내용·입력창 그대로 유지</td></tr>
+  <tr><td>채팅 헤더의 나머지 버튼</td><td>변화 없음 — 기존 버튼 그대로 유지</td></tr>
+  <tr><td><code>Empty</code> 적용 (5.2)</td><td>헤더에서 목록 버튼이 <strong>사라짐</strong> (나머지 버튼 유지)</td></tr>
+  <tr><td><code>DisabledMenuButton</code> 적용 (5.3)</td><td>버튼은 보이고 <code>disabled</code> 상태, 클릭해도 <strong>화면 이동 없음</strong></td></tr>
+  <tr><td>숨김 적용 시 깜빡임 (5.5)</td><td>iOS 27 WKWebView 포함 3개 환경에서 <strong>그려진 프레임 0</strong></td></tr>
+</table>
+
+<div class="ok">
+  <span class="t">확인 완료</span>
+  채팅 ↔ 목록 양방향 이동이 의도대로 작동하며,
+  이동 중 위젯 열림 상태가 유지되는 것까지 확인했습니다.
+</div>
+
+<h2><span class="num">8</span>구현 시 유의 사항</h2>
+
+<h3>대화 이력이 없는 경우</h3>
+<p>
+  신규 사용자처럼 대화가 하나도 없으면 돌아갈 대상이 없습니다.
+  위 코드는 이때 <strong>SDK 기본 닫기 버튼으로 자동 전환</strong>되므로 별도 처리가 필요 없습니다.
+</p>
+
+<h3>목록 필터 설정의 영향</h3>
+<p>
+  진행 중인 대화만 보이도록 목록 필터(<code>conversationStatusFilter</code>)를 걸어 둔 경우,
+  종료된 대화는 <code>listSource.channels</code> 에 포함되지 않습니다.
+  위 코드는 <code>activeChannel</code> 을 먼저 보기 때문에
+  <strong>종료된 대화를 보던 중이라도 그 대화로 정상 복귀합니다.</strong>
+</p>
+
+<h3>아이콘 디자인</h3>
+<p>
+  예시는 외부 의존성 없이 인라인 SVG로 아이콘을 그렸습니다.
+  서비스에서 쓰는 아이콘 세트가 있다면 <code>&lt;svg&gt;</code> 부분만 교체하면 됩니다.
+  버튼 색상은 <code>color: 'inherit'</code> 로 두어 헤더 테마 색을 자동으로 따라갑니다.
+</p>
+
+<h3>터치 영역</h3>
+<p>
+  모바일 웹뷰에서는 버튼 크기를 <strong>최소 32&times;32px 이상</strong>으로 유지해 주세요.
+  아이콘 자체를 작게 그리더라도 <code>&lt;button&gt;</code> 의 크기는 줄이지 않는 편이
+  오터치를 줄이는 데 유리합니다.
+</p>
+
+<h3>접근성</h3>
+<p>
+  <code>aria-label</code> 을 반드시 남겨 주세요.
+  아이콘만 있는 버튼은 스크린 리더가 읽을 텍스트가 없어
+  레이블이 빠지면 시각 보조 기술 사용자가 용도를 알 수 없습니다.
+</p>
+
+<div class="disclaimer">
+  본 문서는 @sendbird/ai-agent-messenger-react v1.45.0 기준으로 작성되었습니다.
+  5.5 의 측정값은 v1.45.0, iOS 27 WKWebView / Chrome 기준이며,
+  슬롯 등록 구현은 v1.42.0 과 v1.45.0 이 동일함을 확인했습니다.
+  사용된 API는 모두 SDK가 공개적으로 export 하는 항목이며, 내부 구현에 의존하지 않습니다.
+  SDK 버전 업그레이드 시 동작을 재확인하시기 바랍니다.
+</div>
+
+</body>
+</html>

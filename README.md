@@ -283,6 +283,32 @@ import { UnreadCountLauncher } from '../components/UnreadCountLauncher.tsx';
 <ConversationHeaderLayout.MenuButton component={DisabledMenuButton} />
 ```
 
+가장 짧은 형태는 이렇습니다. `Empty`는 **컴포넌트 바깥에 한 번만** 선언하세요 —
+`component={() => null}`처럼 인라인으로 넘기면 렌더마다 새 함수가 되어 슬롯이 반복 등록됩니다.
+
+```tsx
+const Empty = () => null;
+
+<FixedMessenger.ConversationChildren>
+  <ConversationHeaderLayout.MenuButton component={Empty} />
+</FixedMessenger.ConversationChildren>
+```
+
+**"채팅창 열릴 때 ≡ 가 잠깐 보였다 사라진다"** 는 문의가 있었습니다.
+DOM 상으로는 기본 ≡ 가 들어왔다 빠지는 게 맞지만, SDK가 `useLayoutEffect`로 교체하므로
+**화면에 그려지지는 않습니다.** 프레임 단위로 측정한 결과입니다.
+
+| 측정 환경 | 기본 ≡ 가 그려진 프레임 |
+| --- | --- |
+| Chrome 데스크톱 레이아웃 | 0 / 358 |
+| Chrome 모바일 레이아웃 | 0 / 720 |
+| iOS 27 WKWebView (진입과 동시에 열림) | 0 / 349 |
+
+그래도 보인다면 ① CSS로도 함께 숨기고 있는지 ② `useEffect`로 DOM을 직접 제거하는지
+③ 슬롯을 조건부로 렌더하는지 ④ `component`에 인라인 함수를 넘기는지 확인하세요.
+확실한 회피책은 **메신저를 미리 마운트해 두고 `opened`로 노출만 토글**하는 것입니다.
+자세한 내용과 측정 스크립트는 가이드 5.5장에 있습니다.
+
 - 두 컴포넌트 모두 `web/src/components/ConversationListMenuButton.tsx`에 포함돼 있습니다.
 - CSS(`display:none`)로 숨기는 방법은 권장하지 않습니다 — 고정 id가 없어 클래스 해시나 `aria-label`에 의존해야 하는데, 각각 빌드·언어 변경에 깨집니다.
 - ≡ 버튼은 **대화 목록으로 가는 유일한 경로**입니다. 숨기면 목록 화면에 접근할 수 없게 되고 위의 뒤로가기 버튼도 쓰일 일이 없어집니다. 목록을 쓰되 진입만 바꾸려면 `entryPoint`를 `'ConversationList'`로 두는 방법도 있습니다.
