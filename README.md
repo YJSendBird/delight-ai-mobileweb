@@ -315,6 +315,35 @@ DOM 상으로는 기본 ≡ 가 들어왔다 빠지는 게 맞지만, SDK가 `us
 
 > 상세 내용은 `Sendbird_AIAgent_대화목록헤더버튼_커스터마이징_가이드.pdf`를 참고하세요.
 
+#### 7. 종료된 대화에서 새 대화 시작
+
+종료된 대화 하단의 **"대화 시작"** 버튼은 기본적으로 `goToActiveConversation()`을 호출합니다.
+즉 **새 대화를 만드는 것이 아니라 "지금 활성화된 대화로 이동"** 하므로,
+진행 중인 대화가 이미 있으면 그 대화로 넘어갑니다. (SDK 의도된 동작)
+
+새 대화를 만들게 하려면 기본 버튼을 끄고 푸터를 직접 그립니다.
+
+```tsx
+<FixedMessenger
+  config={{ conversation: { list: { isTalkToAgentViewEnabled: false } } }}
+  ...
+>
+  <FixedMessenger.ConversationChildren>
+    <ConversationLayout.Footer component={ClosedConversationFooter} />
+  </FixedMessenger.ConversationChildren>
+</FixedMessenger>
+```
+
+- 구현: `web/src/components/ClosedConversationFooter.tsx`
+- **다중 대화 설정에 따라 호출할 함수가 다릅니다.**
+  `Multiple active conversations`(기본값)는 `createConversation()`으로 새 대화를 만들고,
+  `Single active conversation`은 새로 만들 수 없으므로 `goToActiveConversation()`만 호출합니다.
+  코드는 `aiAgentInfo.isMultipleActiveConversationsEnabled`로 분기하므로 설정을 바꿔도 수정이 필요 없습니다.
+- `ConversationStatus`는 `@sendbird/chat/aiAgent`에서 import 해야 합니다 — 메신저 패키지에서 가져오면 런타임 오류가 납니다.
+- 새 대화는 기존 대화의 context를 물려받지 않으므로 `createConversation()`에 `context`를 넘겨주세요.
+
+> 상세 내용은 `Sendbird_AIAgent_종료된대화_새대화시작_가이드.pdf`를 참고하세요.
+
 ## WebView Bridge
 
 네이티브 앱과 웹 앱 간의 양방향 통신을 지원하는 브릿지입니다.

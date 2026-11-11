@@ -1,5 +1,6 @@
 import {
   ConversationHeaderLayout,
+  ConversationLayout,
   ConversationListHeaderLayout,
   FixedMessenger,
   type MessengerSessionRef,
@@ -8,6 +9,7 @@ import { ConversationStatus } from '@sendbird/chat/aiAgent';
 import { createAnonymousSessionInfo, createSessionInfo, parseAppParams } from '../utils/config';
 import { bridge } from '../libs/bridge';
 import { handleLinkClick } from '../libs/linkHandler';
+import { ClosedConversationFooter } from '../components/ClosedConversationFooter.tsx';
 import { ConversationListBackButton } from '../components/ConversationListBackButton.tsx';
 import { ConversationListMenuButton } from '../components/ConversationListMenuButton.tsx';
 import { ActiveChannelObserver } from '../components/ActiveChannelObserver.tsx';
@@ -48,6 +50,8 @@ function SimpleChatPage() {
   return (
     <FixedMessenger
       ref={messengerRef}
+      // 종료된 대화의 기본 "대화 시작" 버튼을 끄고 직접 그립니다.
+      config={{ conversation: { list: { isTalkToAgentViewEnabled: false } } }}
       // 센드버드 앱 아이디
       appId={params.appId}
       // AI 에이전트 아이디
@@ -91,6 +95,9 @@ function SimpleChatPage() {
             </>
           )}
         />
+        {/* 종료된 대화의 "대화 시작" → 새 대화 생성
+            (기본 버튼은 새 대화를 만들지 않고 현재 활성 대화로 이동합니다) */}
+        <ConversationLayout.Footer component={ClosedConversationFooter} />
         {/* 대화 목록으로 가는 메뉴(≡) 버튼의 아이콘을 목록 모양으로 교체 */}
         <ConversationHeaderLayout.MenuButton component={ConversationListMenuButton} />
       </FixedMessenger.ConversationChildren>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>종료된 대화에서 새 대화 시작하기 가이드</title>
+<style>
+  @page {
+    size: A4; margin: 20mm 18mm 20mm 18mm;
+    @bottom-left {
+      content: "Sendbird AI Agent — 종료된 대화에서 새 대화 시작하기 가이드";
+      font-family: "Apple SD Gothic Neo", sans-serif; font-size: 8.5pt; color: #9aa0a6;
+    }
+    @bottom-right {
+      content: counter(page) " / " counter(pages);
+      font-family: "Apple SD Gothic Neo", sans-serif; font-size: 8.5pt; color: #9aa0a6;
+    }
+  }
+  @page :first { @bottom-left { content: ""; } @bottom-right { content: ""; } }
+
+  * { box-sizing: border-box; }
+  body { font-family: "Apple SD Gothic Neo", "Helvetica Neue", sans-serif;
+         font-size: 10.5pt; line-height: 1.65; color: #202124; margin: 0; }
+
+  .cover { page-break-after: always; padding-top: 52mm; }
+  .cover .kicker { font-size: 9pt; letter-spacing: 2.4px; color: #6b4ef5;
+                   font-weight: 700; text-transform: uppercase; margin-bottom: 16px; }
+  .cover h1 { font-size: 26pt; line-height: 1.3; margin: 0 0 18px; letter-spacing: -0.5px; }
+  .cover .rule { width: 56px; height: 4px; background: #6b4ef5; margin-bottom: 28px; }
+  .cover .sub { font-size: 11.5pt; color: #5f6368; line-height: 1.8; margin-bottom: 40px; }
+  .cover .meta { font-size: 9.5pt; color: #80868b; line-height: 1.95; }
+
+  .toc { page-break-after: always; }
+  .toc h2 { border: none; margin-bottom: 16px; }
+  .toc ol { list-style: none; padding-left: 0; counter-reset: c; }
+  .toc > ol > li { counter-increment: c; margin: 10px 0; font-size: 11pt; font-weight: 600; }
+  .toc > ol > li::before { content: counter(c) ". "; color: #6b4ef5; }
+  .toc ol ol { padding-left: 18px; counter-reset: s; margin: 5px 0; }
+  .toc ol ol li { counter-increment: s; font-size: 10pt; font-weight: 400; color: #5f6368; margin: 4px 0; }
+  .toc ol ol li::before { content: counter(c) "." counter(s) " "; color: #9aa0a6; }
+
+  h2 { font-size: 15pt; margin: 28px 0 13px; padding-bottom: 8px;
+       border-bottom: 2px solid #e8eaed; letter-spacing: -0.3px; page-break-after: avoid; }
+  h2 .num { display: inline-block; min-width: 26px; height: 26px; line-height: 26px;
+            text-align: center; background: #6b4ef5; color: #fff; border-radius: 7px;
+            font-size: 11pt; margin-right: 10px; vertical-align: 2px; }
+  h3 { font-size: 11.5pt; margin: 20px 0 7px; color: #3c4043; page-break-after: avoid; }
+  p { margin: 9px 0; }
+  ul, ol { margin: 9px 0; padding-left: 20px; }
+  li { margin: 5px 0; }
+  strong { color: #1a1a1a; }
+  code { font-family: "SF Mono", Menlo, monospace; font-size: 9.3pt;
+         background: #f1f3f4; padding: 1px 5px; border-radius: 4px; }
+  pre { background: #1e1e20; color: #e6e6e6; border-radius: 8px; padding: 12px 14px;
+        font-family: "SF Mono", Menlo, monospace; font-size: 8.3pt; line-height: 1.6;
+        white-space: pre-wrap; word-break: break-all; page-break-inside: auto; }
+  pre .c { color: #7fae6a; }
+  pre .k { color: #d6a0ff; }
+  pre .bad { color: #ff8e8e; }
+
+  .lead { background: #f7f5ff; border-left: 4px solid #6b4ef5;
+          padding: 14px 18px; margin: 16px 0 24px; line-height: 1.75; }
+  .note, .warn, .ok { border-radius: 8px; padding: 12px 16px; margin: 13px 0;
+                      font-size: 10pt; page-break-inside: avoid; }
+  .note { background: #f8f9fa; border: 1px solid #e8eaed; }
+  .warn { background: #fff8e6; border: 1px solid #f6d57a; }
+  .ok   { background: #effaf1; border: 1px solid #a8dfb4; }
+  .note .t, .warn .t, .ok .t { font-weight: 700; display: block; margin-bottom: 4px; }
+  .warn .t { color: #a6730b; } .ok .t { color: #1e7a32; } .note .t { color: #3c4043; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.7pt; }
+  th, td { border: 1px solid #e0e0e0; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f8f9fa; font-weight: 700; }
+  td.q { width: 30%; font-weight: 600; }
+  .disclaimer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #e8eaed;
+                font-size: 9pt; color: #80868b; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="kicker">Sendbird AI Agent · Messenger SDK</div>
+  <h1>종료된 대화에서<br>새 대화 시작하기</h1>
+  <div class="rule"></div>
+  <div class="sub">
+    종료된 대화의 <strong>"대화 시작"</strong> 버튼이<br>
+    <strong>새 대화를 생성</strong>하도록 커스터마이징
+  </div>
+  <div class="meta">
+    대상 기능 &nbsp;·&nbsp; ConversationLayout.Footer 슬롯 교체<br>
+    기준 버전 &nbsp;·&nbsp; @sendbird/ai-agent-messenger-react v1.45.0<br>
+    문서 작성 &nbsp;·&nbsp; 2026-11-11
+  </div>
+</section>
+
+<section class="toc">
+  <h2>목차</h2>
+  <ol>
+    <li>현상과 결론</li>
+    <li>SDK 기본 동작
+      <ol>
+        <li>종료된 대화에 붙는 버튼</li>
+        <li>왜 새 대화가 만들어지지 않는가</li>
+      </ol>
+    </li>
+    <li>해결 방법
+      <ol>
+        <li>기본 버튼 끄기</li>
+        <li>푸터 컴포넌트 구현</li>
+        <li>메신저에 연결</li>
+      </ol>
+    </li>
+    <li>다중 대화 설정에 따른 분기</li>
+    <li>동작 확인 결과</li>
+    <li>구현 시 유의 사항</li>
+  </ol>
+</section>
+
+<h2><span class="num">1</span>현상과 결론</h2>
+
+<div class="lead">
+  <strong>현상</strong> — 종료된 과거 대화에 들어가 하단의 <strong>"대화 시작"</strong> 을 누르면,
+  새 대화가 생성되지 않고 <strong>이미 열려 있는 다른 대화로 이동</strong>합니다.
+</div>
+
+<p>
+  <strong>결론: SDK 의 의도된 동작입니다.</strong> 버그가 아니며, 동작을 바꾸려면
+  <strong>고객사에서 푸터를 커스터마이징</strong>해야 합니다.
+</p>
+
+<p>
+  SDK 기본 버튼은 "새 대화를 만든다"가 아니라
+  <strong>"지금 활성화된 대화로 데려간다"</strong>는 의미로 구현되어 있습니다.
+  따라서 진행 중인 대화가 이미 있으면 그 대화로 이동하는 것이 정상입니다.
+</p>
+
+<table>
+  <tr><td class="q">설정으로 가능한가</td><td>아니오 — 동작을 바꾸는 설정값은 없습니다.</td></tr>
+  <tr><td class="q">필요한 작업</td><td>기본 버튼 비활성화(설정 1줄) + 푸터 컴포넌트 1개 추가</td></tr>
+  <tr><td class="q">네이티브 수정</td><td>불필요 (Android / iOS 모두 변경 없음)</td></tr>
+  <tr><td class="q">주의</td><td><strong>다중 대화 설정에 따라 호출할 함수가 다릅니다</strong> (4장)</td></tr>
+</table>
+
+<h2><span class="num">2</span>SDK 기본 동작</h2>
+
+<h3>2.1 종료된 대화에 붙는 버튼</h3>
+
+<p>
+  대화가 <strong>종료 상태</strong>가 되면, SDK 는 메시지 목록 끝에 "대화 시작" 버튼을 자동으로 붙입니다.
+  이 버튼의 노출 여부는 아래 설정으로 제어합니다.
+</p>
+
+<pre>config.conversation.list.isTalkToAgentViewEnabled   <span class="c">// 기본값 true</span></pre>
+
+<h3>2.2 왜 새 대화가 만들어지지 않는가</h3>
+
+<p>버튼이 호출하는 함수가 <code>goToActiveConversation</code> 이기 때문입니다.</p>
+
+<pre><span class="c">// SDK 내부 — 종료된 대화에 붙는 "대화 시작" 뷰</span>
+<span class="k">const</span> TalkToAgentView = ({ isClosed }) => {
+  <span class="k">const</span> { stringSet } = useLocalizationContext();
+  <span class="k">const</span> { channelSource, goToActiveConversation } = useConversationContext();
+
+  <span class="k">if</span> (!channelSource.channel?.isAIAgent || !isClosed) <span class="k">return null</span>;
+
+  <span class="k">return</span> (
+    &lt;Button {...conversation.startNewConversationButton({
+      onActivate: goToActiveConversation   <span class="bad">// ← 새 대화 생성이 아님</span>
+    }).props}&gt;
+      {stringSet.TALK_TO_AGENT}
+    &lt;/Button&gt;
+  );
+};</pre>
+
+<div class="note">
+  <span class="t">이름과 동작이 어긋나 보이는 이유</span>
+  버튼 레이블은 "대화 시작"이지만, 내부 동작은 <strong>"활성 대화로 이동"</strong> 입니다.
+  열려 있는 대화가 없을 때는 결과적으로 새 대화가 열리므로 기대대로 보이지만,
+  <strong>이미 진행 중인 대화가 있으면</strong> 그 대화로 이동합니다.
+</div>
+
+<div class="warn">
+  <span class="t">대화 목록 화면의 "대화 시작"과는 다릅니다</span>
+  대화 목록 화면 하단의 "대화 시작"은 <strong>다중 대화 설정을 보고 분기</strong>하여
+  새 대화를 만들기도 합니다. 이번에 다루는 것은
+  <strong>대화 화면 안(종료된 대화 하단)의 버튼</strong>이며, 둘은 서로 다른 컴포넌트입니다.
+</div>
+
+<h2><span class="num">3</span>해결 방법</h2>
+
+<p>
+  기본 버튼을 끄고, 같은 자리에 <strong>새 대화를 만드는 버튼</strong>을 직접 그립니다.
+  SDK 가 공개한 <code>ConversationLayout.Footer</code> 슬롯을 사용하므로
+  내부 구현에 의존하지 않습니다.
+</p>
+
+<h3>3.1 기본 버튼 끄기</h3>
+
+<pre>&lt;FixedMessenger
+  config={{ conversation: { list: { isTalkToAgentViewEnabled: <span class="k">false</span> } } }}
+  ... /&gt;</pre>
+
+<h3>3.2 푸터 컴포넌트 구현</h3>
+
+<p><code>ClosedConversationFooter.tsx</code></p>
+
+<pre><span class="k">import</span> { ConversationStatus } <span class="k">from</span> '@sendbird/chat/aiAgent';
+<span class="k">import</span> {
+  ConversationLayout,
+  useConversationContext,
+  useLocalizationContext,
+  useMessengerContext,
+  useMessengerSessionContext,
+} <span class="k">from</span> '@sendbird/ai-agent-messenger-react';
+<span class="k">import</span> { useState } <span class="k">from</span> 'react';
+
+<span class="k">const</span> { Footer: DefaultFooter } = ConversationLayout.defaults.components;
+
+<span class="k">export function</span> ClosedConversationFooter() {
+  <span class="k">const</span> { channelSource, goToActiveConversation } = useConversationContext();
+  <span class="k">const</span> { aiAgentInfo, createConversation } = useMessengerSessionContext();
+  <span class="k">const</span> { language, countryCode, context } = useMessengerContext();
+  <span class="k">const</span> { stringSet } = useLocalizationContext();
+  <span class="k">const</span> [pending, setPending] = useState(<span class="k">false</span>);
+
+  <span class="k">const</span> isClosed =
+    channelSource.channel?.conversation?.status === ConversationStatus.CLOSED;
+
+  <span class="k">const</span> startNewConversation = <span class="k">async</span> () => {
+    setPending(<span class="k">true</span>);
+    <span class="k">try</span> {
+      <span class="k">if</span> (aiAgentInfo.isMultipleActiveConversationsEnabled) {
+        <span class="c">// 다중 대화 허용 → 새 대화를 생성합니다.</span>
+        <span class="k">await</span> createConversation({
+          aiAgentId: aiAgentInfo.userId,
+          language,
+          country: countryCode,
+          context,
+        });
+      }
+      <span class="c">// 단일 대화 설정이면 새로 만들지 않고 기존 활성 대화로 이동합니다.</span>
+      <span class="k">await</span> goToActiveConversation();
+    } <span class="k">finally</span> {
+      setPending(<span class="k">false</span>);
+    }
+  };
+
+  <span class="k">return</span> (
+    &lt;&gt;
+      {isClosed &amp;&amp; (
+        &lt;button type="button" disabled={pending} onClick={startNewConversation}&gt;
+          {stringSet.TALK_TO_AGENT}
+        &lt;/button&gt;
+      )}
+      <span class="c">{/* 입력창 등 기본 푸터는 그대로 유지합니다. */}</span>
+      &lt;DefaultFooter /&gt;
+    &lt;/&gt;
+  );
+}</pre>
+
+<div class="note">
+  <span class="t">import 경로에 주의하세요</span>
+  <code>ConversationStatus</code> 는 메신저 패키지가 아니라
+  <strong><code>@sendbird/chat/aiAgent</code></strong> 에서 가져와야 합니다.
+  메신저 패키지에서 import 하면 타입 검사는 통과하지만
+  <strong>런타임에 "does not provide an export named 'ConversationStatus'" 오류</strong>가 납니다.
+  (문자열 <code>'closed'</code> 와 직접 비교해도 됩니다)
+</div>
+
+<h3>3.3 메신저에 연결</h3>
+
+<pre>&lt;FixedMessenger
+  config={{ conversation: { list: { isTalkToAgentViewEnabled: <span class="k">false</span> } } }}
+  ...
+&gt;
+  &lt;FixedMessenger.ConversationChildren&gt;
+    &lt;ConversationLayout.Footer component={ClosedConversationFooter} /&gt;
+  &lt;/FixedMessenger.ConversationChildren&gt;
+&lt;/FixedMessenger&gt;</pre>
+
+<div class="warn">
+  <span class="t">슬롯 위치</span>
+  대화 화면 푸터이므로 <strong><code>FixedMessenger.ConversationChildren</code></strong> 안에 넣어야 합니다.
+  <code>ConversationListChildren</code>(목록 화면)에 넣으면 적용되지 않습니다.
+</div>
+
+<h2><span class="num">4</span>다중 대화 설정에 따른 분기</h2>
+
+<p>
+  <strong>이 부분이 가장 중요합니다.</strong> 대시보드의 다중 대화 설정에 따라
+  호출해야 하는 함수가 달라집니다.
+</p>
+
+<table>
+  <tr><th>대시보드 설정</th><th>호출할 함수</th><th>결과</th></tr>
+  <tr>
+    <td><code>Multiple active conversations</code><br>(기본값)</td>
+    <td><code>createConversation()</code><br>→ <code>goToActiveConversation()</code></td>
+    <td>새 대화를 만들고 그 대화로 이동</td>
+  </tr>
+  <tr>
+    <td><code>Single active conversation</code></td>
+    <td><code>goToActiveConversation()</code></td>
+    <td>새로 만들지 않고 기존 활성 대화로 이동</td>
+  </tr>
+</table>
+
+<p>
+  단일 대화 설정에서는 <strong>동시에 두 개의 활성 대화를 가질 수 없으므로</strong>
+  <code>createConversation()</code> 을 호출하면 안 됩니다.
+</p>
+
+<p>
+  설정값은 아래 값으로 읽을 수 있습니다. 3.2 의 코드는 이 값으로 분기하므로
+  <strong>대시보드 설정을 바꿔도 코드를 수정할 필요가 없습니다.</strong>
+</p>
+
+<pre><span class="k">const</span> { aiAgentInfo } = useMessengerSessionContext();
+aiAgentInfo.isMultipleActiveConversationsEnabled   <span class="c">// boolean</span></pre>
+
+<h2><span class="num">5</span>동작 확인 결과</h2>
+
+<p>샘플 앱에 적용하고 실제로 확인한 결과입니다. (다중 대화 허용 설정 기준)</p>
+
+<table>
+  <tr><th>확인 항목</th><th>결과</th></tr>
+  <tr><td>진행 중인 대화</td><td>"대화 시작" 버튼 <strong>미노출</strong> (종료 상태에서만 표시)</td></tr>
+  <tr><td>대화 종료 후</td><td>"대화 시작" 버튼 표시, 입력창 비활성</td></tr>
+  <tr><td>"대화 시작" 클릭</td><td><strong>채널 URL 변경 = 새 대화 생성 확인</strong></td></tr>
+  <tr><td>클릭 후 상태</td><td><code>closed</code> → <code>open</code>, 입력창 활성화</td></tr>
+  <tr><td>새 대화 내용</td><td>웰컴 메시지부터 새로 시작</td></tr>
+  <tr><td>기본 푸터(입력창)</td><td>변화 없음 — 그대로 유지</td></tr>
+</table>
+
+<div class="ok">
+  <span class="t">확인 완료</span>
+  종료된 대화에서 "대화 시작"을 누르면 기존 대화로 이동하지 않고
+  <strong>새 대화가 생성</strong>되는 것을 채널 URL 변경으로 확인했습니다.
+</div>
+
+<h2><span class="num">6</span>구현 시 유의 사항</h2>
+
+<h3>중복 클릭 방지</h3>
+<p>
+  <code>createConversation()</code> 은 네트워크 요청입니다. 응답 전에 다시 눌리면
+  <strong>대화가 두 개 생성</strong>될 수 있으므로, 위 코드처럼
+  <code>pending</code> 상태로 버튼을 비활성화해 주세요.
+</p>
+
+<h3>context 전달</h3>
+<p>
+  새 대화는 <strong>기존 대화의 context 를 물려받지 않습니다.</strong>
+  <code>createConversation()</code> 에 <code>context</code> 를 넘기지 않으면
+  사용자 식별 정보나 시간대 같은 값이 빠진 채 대화가 시작되므로,
+  <code>useMessengerContext()</code> 에서 받은 값을 그대로 전달해 주세요.
+</p>
+
+<h3>버튼 레이블</h3>
+<p>
+  <code>stringSet.TALK_TO_AGENT</code> 을 쓰면 SDK 의 다국어 설정을 그대로 따릅니다.
+  문구를 직접 지정하면 언어 전환 시 번역되지 않으니 주의하세요.
+</p>
+
+<h3>종료 상태 판별</h3>
+<p>
+  <code>channelSource.channel?.conversation?.status</code> 로 확인합니다.
+  <strong>옵셔널 체이닝을 생략하지 마세요</strong> — 대화가 아직 로드되지 않은
+  시점에는 <code>channel</code> 이 <code>undefined</code> 입니다.
+</p>
+
+<div class="disclaimer">
+  본 문서는 @sendbird/ai-agent-messenger-react v1.45.0 기준으로 작성되었습니다.
+  2장의 SDK 기본 동작은 배포 번들 코드를 직접 확인한 내용이며,
+  5장의 확인 결과는 다중 대화 허용 설정에서 측정한 것입니다.
+  사용된 API 는 모두 SDK 가 공개적으로 export 하는 항목입니다.
+  SDK 버전 업그레이드 시 동작을 재확인하시기 바랍니다.
+</div>
+
+</body>
+</html>
