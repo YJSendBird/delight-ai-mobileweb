@@ -96,13 +96,20 @@
   <h2>목차</h2>
   <ol>
     <li>현상과 결론</li>
+    <li>먼저 결정할 것 — 설정이냐 커스텀이냐
+      <ol>
+        <li>다중 대화 허용 설정</li>
+        <li>두 가지 선택지</li>
+        <li>어떤 쪽을 고를 것인가</li>
+      </ol>
+    </li>
     <li>SDK 기본 동작
       <ol>
         <li>종료된 대화에 붙는 버튼</li>
         <li>왜 새 대화가 만들어지지 않는가</li>
       </ol>
     </li>
-    <li>해결 방법
+    <li>해결 방법 — 푸터 커스터마이징
       <ol>
         <li>기본 버튼 끄기</li>
         <li>푸터 컴포넌트 구현</li>
@@ -123,8 +130,9 @@
 </div>
 
 <p>
-  <strong>결론: SDK 의 의도된 동작입니다.</strong> 버그가 아니며, 동작을 바꾸려면
-  <strong>고객사에서 푸터를 커스터마이징</strong>해야 합니다.
+  <strong>결론: SDK 의 의도된 동작입니다.</strong> 버그가 아닙니다.
+  해결 방법은 두 가지이고, <strong>어느 쪽을 쓸지는 "한 번에 여러 대화를 허용할 것인가"에 따라 갈립니다.</strong>
+  2장을 먼저 읽고 결정해 주세요.
 </p>
 
 <p>
@@ -134,15 +142,115 @@
 </p>
 
 <table>
-  <tr><td class="q">설정으로 가능한가</td><td>아니오 — 동작을 바꾸는 설정값은 없습니다.</td></tr>
-  <tr><td class="q">필요한 작업</td><td>기본 버튼 비활성화(설정 1줄) + 푸터 컴포넌트 1개 추가</td></tr>
+  <tr><td class="q">해결 방법</td><td>① 앱 설정 변경(커스텀 불필요) &nbsp;또는&nbsp; ② 푸터 커스터마이징</td></tr>
+  <tr><td class="q">선택 기준</td><td>한 번에 <strong>여러 대화를 동시에</strong> 열어둘 필요가 있는가</td></tr>
   <tr><td class="q">네이티브 수정</td><td>불필요 (Android / iOS 모두 변경 없음)</td></tr>
-  <tr><td class="q">주의</td><td><strong>다중 대화 설정에 따라 호출할 함수가 다릅니다</strong> (4장)</td></tr>
+  <tr><td class="q">주의</td><td><strong>설정에 따라 호출할 함수가 다릅니다</strong> (5장)</td></tr>
 </table>
 
-<h2><span class="num">2</span>SDK 기본 동작</h2>
+<h2><span class="num">2</span>먼저 결정할 것 — 설정이냐 커스텀이냐</h2>
 
-<h3>2.1 종료된 대화에 붙는 버튼</h3>
+<h3>2.1 다중 대화 허용 설정</h3>
+
+<p>
+  이 동작의 뿌리에는 <strong>앱 단위 설정</strong>이 하나 있습니다.
+  한 사용자가 <strong>동시에 여러 개의 열린 대화</strong>를 가질 수 있는지를 정하는 값입니다.
+</p>
+
+<pre>is_multiple_active_conversations_enabled   <span class="c">// 앱 레벨 설정, 기본값 true</span></pre>
+
+<table>
+  <tr><th>설정</th><th>의미</th></tr>
+  <tr>
+    <td><code>true</code> — Multiple active conversations<br>(기본값)</td>
+    <td>한 사용자가 <strong>여러 대화를 동시에</strong> 열어둘 수 있습니다.</td>
+  </tr>
+  <tr>
+    <td><code>false</code> — Single active conversation</td>
+    <td>열린 대화는 <strong>항상 하나</strong>입니다. 새 대화를 시작하려면
+        기존 대화를 <strong>먼저 종료</strong>해야 합니다.</td>
+  </tr>
+</table>
+
+<div class="note">
+  <span class="t">이 값은 버튼 문구와 동작을 함께 바꿉니다</span>
+  설정에 따라 CTA 에 표시되는 <strong>문구와 동작 방식이 달라집니다.</strong>
+  단순한 on/off 가 아니라 대화 모델 자체를 정하는 값이므로,
+  바꾸기 전에 서비스 시나리오를 먼저 정리해 주세요.
+</div>
+
+<h3>2.2 두 가지 선택지</h3>
+
+<table>
+  <tr><th></th><th>① 설정만 변경</th><th>② 설정 유지 + 커스텀</th></tr>
+  <tr>
+    <td><strong>설정값</strong></td>
+    <td><code>false</code> (Single)</td>
+    <td><code>true</code> (Multiple, 기본값 유지)</td>
+  </tr>
+  <tr>
+    <td><strong>개발 작업</strong></td>
+    <td><strong>없음</strong></td>
+    <td>푸터 컴포넌트 1개 추가 (4장)</td>
+  </tr>
+  <tr>
+    <td><strong>"대화 시작" 결과</strong></td>
+    <td>새 대화로 진행</td>
+    <td>새 대화 생성</td>
+  </tr>
+  <tr>
+    <td><strong>동시 대화</strong></td>
+    <td>불가 — 항상 1개</td>
+    <td>가능 — 여러 개 동시 유지</td>
+  </tr>
+  <tr>
+    <td><strong>제약</strong></td>
+    <td>새 대화 전에 <strong>기존 대화 종료 처리 필요</strong></td>
+    <td>대화가 계속 쌓이므로 목록 관리 필요</td>
+  </tr>
+</table>
+
+<p>
+  <strong>①번은 커스텀 코드가 전혀 필요 없습니다.</strong>
+  동시에 여러 대화를 열어둘 이유가 없다면 설정 변경만으로 끝납니다.
+</p>
+
+<h3>2.3 어떤 쪽을 고를 것인가</h3>
+
+<div class="lead">
+  판단 기준은 하나입니다 —
+  <strong>"메신저에서 한 번에 여러 개의 열린 대화를 허용할 것인가,
+  아니면 항상 하나만 허용할 것인가?"</strong>
+</div>
+
+<table>
+  <tr><th>이런 경우라면</th><th>권장</th></tr>
+  <tr>
+    <td>문의 건별로 대화를 나눠 관리할 필요가 없다.<br>
+        사용자는 한 번에 하나의 상담만 진행한다.</td>
+    <td><strong>① 설정 변경</strong><br>(개발 불필요)</td>
+  </tr>
+  <tr>
+    <td>문의 유형별로 대화를 따로 열어두고 오갈 수 있어야 한다.<br>
+        이전 대화를 종료하지 않은 채 새 문의를 시작해야 한다.</td>
+    <td><strong>② 설정 유지 + 커스텀</strong></td>
+  </tr>
+</table>
+
+<div class="warn">
+  <span class="t">①번(Single)을 선택할 경우</span>
+  열린 대화가 하나로 제한되므로, <strong>새 대화를 시작하기 전에 기존 대화를 종료하는 처리</strong>가
+  서비스 흐름에 들어가야 합니다. 이 부분을 빠뜨리면 새 대화가 시작되지 않습니다.
+</div>
+
+<p>
+  <strong>3장 이후는 ②번(설정 유지 + 커스텀)을 선택한 경우의 구현 방법입니다.</strong>
+  ①번을 선택하셨다면 설정 변경만으로 충분하며, 별도 개발은 필요하지 않습니다.
+</p>
+
+<h2><span class="num">3</span>SDK 기본 동작</h2>
+
+<h3>3.1 종료된 대화에 붙는 버튼</h3>
 
 <p>
   대화가 <strong>종료 상태</strong>가 되면, SDK 는 메시지 목록 끝에 "대화 시작" 버튼을 자동으로 붙입니다.
@@ -151,7 +259,7 @@
 
 <pre>config.conversation.list.isTalkToAgentViewEnabled   <span class="c">// 기본값 true</span></pre>
 
-<h3>2.2 왜 새 대화가 만들어지지 않는가</h3>
+<h3>3.2 왜 새 대화가 만들어지지 않는가</h3>
 
 <p>버튼이 호출하는 함수가 <code>goToActiveConversation</code> 이기 때문입니다.</p>
 
@@ -185,7 +293,7 @@
   <strong>대화 화면 안(종료된 대화 하단)의 버튼</strong>이며, 둘은 서로 다른 컴포넌트입니다.
 </div>
 
-<h2><span class="num">3</span>해결 방법</h2>
+<h2><span class="num">4</span>해결 방법 — 푸터 커스터마이징</h2>
 
 <p>
   기본 버튼을 끄고, 같은 자리에 <strong>새 대화를 만드는 버튼</strong>을 직접 그립니다.
@@ -193,13 +301,13 @@
   내부 구현에 의존하지 않습니다.
 </p>
 
-<h3>3.1 기본 버튼 끄기</h3>
+<h3>4.1 기본 버튼 끄기</h3>
 
 <pre>&lt;FixedMessenger
   config={{ conversation: { list: { isTalkToAgentViewEnabled: <span class="k">false</span> } } }}
   ... /&gt;</pre>
 
-<h3>3.2 푸터 컴포넌트 구현</h3>
+<h3>4.2 푸터 컴포넌트 구현</h3>
 
 <p><code>ClosedConversationFooter.tsx</code></p>
 
@@ -266,7 +374,7 @@
   (문자열 <code>'closed'</code> 와 직접 비교해도 됩니다)
 </div>
 
-<h3>3.3 메신저에 연결</h3>
+<h3>4.3 메신저에 연결</h3>
 
 <pre>&lt;FixedMessenger
   config={{ conversation: { list: { isTalkToAgentViewEnabled: <span class="k">false</span> } } }}
@@ -283,7 +391,7 @@
   <code>ConversationListChildren</code>(목록 화면)에 넣으면 적용되지 않습니다.
 </div>
 
-<h2><span class="num">4</span>다중 대화 설정에 따른 분기</h2>
+<h2><span class="num">5</span>다중 대화 설정에 따른 분기</h2>
 
 <p>
   <strong>이 부분이 가장 중요합니다.</strong> 대시보드의 다중 대화 설정에 따라
@@ -310,14 +418,38 @@
 </p>
 
 <p>
-  설정값은 아래 값으로 읽을 수 있습니다. 3.2 의 코드는 이 값으로 분기하므로
-  <strong>대시보드 설정을 바꿔도 코드를 수정할 필요가 없습니다.</strong>
+  설정값은 SDK 에서 아래와 같이 읽을 수 있습니다. 4.2 의 코드는 이 값으로 분기하므로
+  <strong>설정을 바꿔도 코드를 수정할 필요가 없습니다.</strong>
 </p>
 
 <pre><span class="k">const</span> { aiAgentInfo } = useMessengerSessionContext();
 aiAgentInfo.isMultipleActiveConversationsEnabled   <span class="c">// boolean</span></pre>
 
-<h2><span class="num">5</span>동작 확인 결과</h2>
+<h3>현재 설정값 확인 방법</h3>
+
+<p>
+  이 값은 <strong>앱 레벨 설정</strong>이며, 메신저 설정 응답에서도 확인할 수 있습니다.
+  어떤 값으로 운영 중인지 모를 때는 담당자에게 확인을 요청해 주세요.
+</p>
+
+<pre>POST https://api-{appId}.app.delight.ai/v3/ai_agent/ai_agents/{aiAgentId}/messenger_settings
+
+<span class="c">// 응답 일부</span>
+{
+  "bot": {
+    "is_multiple_active_conversations_enabled": <span class="k">true</span>   <span class="c">// 기본값</span>
+  }
+}</pre>
+
+<div class="warn">
+  <span class="t">Single 설정에서는 종료 처리가 선행되어야 합니다</span>
+  <code>Single active conversation</code> 으로 운영하는 경우,
+  열린 대화가 이미 있으면 새 대화를 만들 수 없습니다.
+  <strong>기존 대화를 종료하는 처리를 먼저 수행</strong>한 뒤에
+  새 대화로 넘어가도록 흐름을 구성해 주세요.
+</div>
+
+<h2><span class="num">6</span>동작 확인 결과</h2>
 
 <p>샘플 앱에 적용하고 실제로 확인한 결과입니다. (다중 대화 허용 설정 기준)</p>
 
@@ -337,7 +469,7 @@ aiAgentInfo.isMultipleActiveConversationsEnabled   <span class="c">// boolean</s
   <strong>새 대화가 생성</strong>되는 것을 채널 URL 변경으로 확인했습니다.
 </div>
 
-<h2><span class="num">6</span>구현 시 유의 사항</h2>
+<h2><span class="num">7</span>구현 시 유의 사항</h2>
 
 <h3>중복 클릭 방지</h3>
 <p>
