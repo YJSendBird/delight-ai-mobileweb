@@ -354,6 +354,36 @@ DOM 상으로는 기본 ≡ 가 들어왔다 빠지는 게 맞지만, SDK가 `us
 
 > 상세 내용은 `Sendbird_AIAgent_종료된대화_새대화시작_가이드.pdf`를 참고하세요.
 
+#### 8. 첨부 버튼 노출을 앱 버전별로 제어
+
+첨부 on/off는 **서버 설정(`attachment_mode`)**이라 앱 버전을 구분하지 못합니다.
+또 `config.conversation.input.*`로 메뉴 항목을 모두 꺼도 **+ 버튼은 남고 빈 시트가 뜹니다.**
+
+"특정 앱 버전 이상에서만 첨부 UI 노출" 같은 요구는 입력 영역을 교체해야 합니다.
+
+```tsx
+<FixedMessenger.ConversationChildren>
+  <ConversationLayout.Footer
+    component={() => <AppAwareFooter supportsAttachment={params.appCapabilities.supportsAttachment} />}
+  />
+</FixedMessenger.ConversationChildren>
+```
+
+첨부 버튼 노출은 **두 조건의 AND**로 판단합니다.
+
+```
+첨부 버튼 = supportsAttachment (앱이 전달)  AND  createAttachmentRules(...).isEnabled() (서버 정책)
+```
+
+- 구현: `web/src/components/AppAwareMessageInput.tsx`, `AppAwareFooter.tsx`
+- 버전 판단은 **네이티브가** 수행하고 웹은 결과만 받습니다 → 기준 버전이 바뀌어도 웹 수정 불필요
+- 값이 전달되지 않으면 **구버전으로 간주해 끕니다** (`=== 'true'` 비교)
+- `state.input.disabled`를 반드시 따르세요 — AI 응답 중 입력이 막히는 동작이 사라집니다
+- `ConversationLayout.Footer` 슬롯은 하나만 적용되므로, 7절의 "대화 시작" 버튼과 함께 쓰려면 한 컴포넌트에서 같이 렌더해야 합니다
+- 버전 분기가 필요 없다면 `attachment_mode` 설정만으로 충분합니다 — 이 커스텀은 **버전별 분기가 필요할 때만** 쓰세요
+
+> 상세 내용은 `Sendbird_AIAgent_첨부버튼_노출제어_커스텀입력창_가이드.pdf`를 참고하세요.
+
 ## WebView Bridge
 
 네이티브 앱과 웹 앱 간의 양방향 통신을 지원하는 브릿지입니다.

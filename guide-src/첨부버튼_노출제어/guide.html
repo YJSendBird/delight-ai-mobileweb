@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>첨부 버튼 노출 제어 — 커스텀 입력창 가이드</title>
+<style>
+  @page {
+    size: A4; margin: 20mm 18mm 20mm 18mm;
+    @bottom-left {
+      content: "Sendbird AI Agent — 첨부 버튼 노출 제어(커스텀 입력창) 가이드";
+      font-family: "Apple SD Gothic Neo", sans-serif; font-size: 8.5pt; color: #9aa0a6;
+    }
+    @bottom-right {
+      content: counter(page) " / " counter(pages);
+      font-family: "Apple SD Gothic Neo", sans-serif; font-size: 8.5pt; color: #9aa0a6;
+    }
+  }
+  @page :first { @bottom-left { content: ""; } @bottom-right { content: ""; } }
+
+  * { box-sizing: border-box; }
+  body { font-family: "Apple SD Gothic Neo", "Helvetica Neue", sans-serif;
+         font-size: 10.5pt; line-height: 1.65; color: #202124; margin: 0; }
+
+  .cover { page-break-after: always; padding-top: 52mm; }
+  .cover .kicker { font-size: 9pt; letter-spacing: 2.4px; color: #6b4ef5;
+                   font-weight: 700; text-transform: uppercase; margin-bottom: 16px; }
+  .cover h1 { font-size: 26pt; line-height: 1.3; margin: 0 0 18px; letter-spacing: -0.5px; }
+  .cover .rule { width: 56px; height: 4px; background: #6b4ef5; margin-bottom: 28px; }
+  .cover .sub { font-size: 11.5pt; color: #5f6368; line-height: 1.8; margin-bottom: 40px; }
+  .cover .meta { font-size: 9.5pt; color: #80868b; line-height: 1.95; }
+
+  .toc { page-break-after: always; }
+  .toc h2 { border: none; margin-bottom: 16px; }
+  .toc ol { list-style: none; padding-left: 0; counter-reset: c; }
+  .toc > ol > li { counter-increment: c; margin: 10px 0; font-size: 11pt; font-weight: 600; }
+  .toc > ol > li::before { content: counter(c) ". "; color: #6b4ef5; }
+  .toc ol ol { padding-left: 18px; counter-reset: s; margin: 5px 0; }
+  .toc ol ol li { counter-increment: s; font-size: 10pt; font-weight: 400; color: #5f6368; margin: 4px 0; }
+  .toc ol ol li::before { content: counter(c) "." counter(s) " "; color: #9aa0a6; }
+
+  h2 { font-size: 15pt; margin: 28px 0 13px; padding-bottom: 8px;
+       border-bottom: 2px solid #e8eaed; letter-spacing: -0.3px; page-break-after: avoid; }
+  h2 .num { display: inline-block; min-width: 26px; height: 26px; line-height: 26px;
+            text-align: center; background: #6b4ef5; color: #fff; border-radius: 7px;
+            font-size: 11pt; margin-right: 10px; vertical-align: 2px; }
+  h3 { font-size: 11.5pt; margin: 20px 0 7px; color: #3c4043; page-break-after: avoid; }
+  p { margin: 9px 0; }
+  ul, ol { margin: 9px 0; padding-left: 20px; }
+  li { margin: 5px 0; }
+  strong { color: #1a1a1a; }
+  code { font-family: "SF Mono", Menlo, monospace; font-size: 9.3pt;
+         background: #f1f3f4; padding: 1px 5px; border-radius: 4px; }
+  pre { background: #1e1e20; color: #e6e6e6; border-radius: 8px; padding: 12px 14px;
+        font-family: "SF Mono", Menlo, monospace; font-size: 8.3pt; line-height: 1.6;
+        white-space: pre-wrap; word-break: break-all; page-break-inside: auto; }
+  pre .c { color: #7fae6a; }
+  pre .k { color: #d6a0ff; }
+  pre .bad { color: #ff8e8e; }
+
+  .lead { background: #f7f5ff; border-left: 4px solid #6b4ef5;
+          padding: 14px 18px; margin: 16px 0 24px; line-height: 1.75; }
+  .note, .warn, .ok { border-radius: 8px; padding: 12px 16px; margin: 13px 0;
+                      font-size: 10pt; page-break-inside: avoid; }
+  .note { background: #f8f9fa; border: 1px solid #e8eaed; }
+  .warn { background: #fff8e6; border: 1px solid #f6d57a; }
+  .ok   { background: #effaf1; border: 1px solid #a8dfb4; }
+  .note .t, .warn .t, .ok .t { font-weight: 700; display: block; margin-bottom: 4px; }
+  .warn .t { color: #a6730b; } .ok .t { color: #1e7a32; } .note .t { color: #3c4043; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.7pt; }
+  th, td { border: 1px solid #e0e0e0; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f8f9fa; font-weight: 700; }
+  td.q { width: 30%; font-weight: 600; }
+  .disclaimer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #e8eaed;
+                font-size: 9pt; color: #80868b; line-height: 1.7; }
+</style>
+</head>
+<body>
+<section class="cover">
+  <div class="kicker">Sendbird AI Agent · Messenger SDK</div>
+  <h1>첨부 버튼 노출 제어<br>커스텀 입력창</h1>
+  <div class="rule"></div>
+  <div class="sub">
+    앱 <strong>버전별</strong>로 첨부 UI 노출을 제어하는 방법<br>
+    <code>ConversationLayout.Footer</code> 로 입력 영역 교체
+  </div>
+  <div class="meta">
+    대상 기능 &nbsp;·&nbsp; 입력 영역 커스터마이징 + 첨부 버튼 조건부 노출<br>
+    기준 버전 &nbsp;·&nbsp; @sendbird/ai-agent-messenger-react v1.45.0<br>
+    문서 작성 &nbsp;·&nbsp; 2026-11-27
+  </div>
+</section>
+
+<section class="toc">
+  <h2>목차</h2>
+  <ol>
+    <li>요청과 결론</li>
+    <li>왜 설정만으로는 안 되는가
+      <ol>
+        <li>첨부 기능은 서버 설정</li>
+        <li>입력 설정으로 꺼도 버튼은 남습니다</li>
+      </ol>
+    </li>
+    <li>해결 구조</li>
+    <li>구현
+      <ol>
+        <li>앱 → 웹으로 지원 여부 전달</li>
+        <li>첨부 정책 읽기</li>
+        <li>커스텀 입력창</li>
+        <li>푸터 슬롯에 연결</li>
+      </ol>
+    </li>
+    <li>동작 확인 결과</li>
+    <li>구현 시 유의 사항</li>
+  </ol>
+</section>
+
+<h2><span class="num">1</span>요청과 결론</h2>
+
+<div class="lead">
+  <strong>요청</strong> — 앱 버전별로 AI 챗봇의 첨부 파일 UI 노출을 결정하고 싶다.
+  예를 들어 Android 앱 <strong>1.00.12 이상에서만</strong> 첨부 버튼이 보이게 하고 싶다.
+</div>
+
+<table>
+  <tr><td class="q">SDK 설정으로 가능한가</td><td><strong>아니오</strong> — 첨부 on/off 는 서버 설정이라 앱 버전을 구분하지 못합니다.</td></tr>
+  <tr><td class="q">해결 방법</td><td>입력 영역을 커스텀 컴포넌트로 교체하고, 첨부 버튼 노출을 직접 판단</td></tr>
+  <tr><td class="q">판단 조건</td><td><strong>① 앱이 알려준 지원 여부 AND ② 기존 SDK 첨부 정책</strong></td></tr>
+  <tr><td class="q">적용 범위</td><td>해당 플랫폼만 적용 가능 (예: Android 만). iOS·일반 웹은 기본 입력창 유지</td></tr>
+</table>
+
+<p>
+  버전 판단은 <strong>앱이 담당</strong>합니다. 웹은 앱이 넘겨준 값을 받아 쓰기만 하므로,
+  나중에 기준 버전이 바뀌어도 <strong>웹 코드는 수정할 필요가 없습니다.</strong>
+</p>
+
+<h2><span class="num">2</span>왜 설정만으로는 안 되는가</h2>
+
+<h3>2.1 첨부 기능은 서버 설정</h3>
+
+<p>
+  첨부 기능의 on/off 는 에이전트 단위 서버 설정(<code>attachment_mode</code>)으로 결정됩니다.
+  SDK 는 이 값만 보고 첨부 버튼을 그릴지 말지 정합니다.
+</p>
+
+<pre><span class="c">// SDK 내부 — 첨부 버튼 컴포넌트</span>
+<span class="k">if</span> (!isFileUploadEnabled) <span class="k">return null</span>;   <span class="c">// attachment_mode 기준</span></pre>
+
+<table>
+  <tr><th><code>attachment_mode</code></th><th>첨부 버튼</th></tr>
+  <tr><td><code>off</code></td><td>렌더 안 됨 — 완전히 사라짐</td></tr>
+  <tr><td><code>handed_off_only</code></td><td>상담사 연결 후에만 노출</td></tr>
+  <tr><td><code>always</code></td><td>항상 노출</td></tr>
+</table>
+
+<div class="warn">
+  <span class="t">이 값은 앱 전체에 일괄 적용됩니다</span>
+  서버 설정이므로 <strong>앱 버전을 구분할 수단이 없습니다.</strong>
+  구버전 앱과 신버전 앱이 같은 에이전트를 바라보는 한, 둘은 같은 값을 받습니다.
+</div>
+
+<h3>2.2 입력 설정으로 꺼도 버튼은 남습니다</h3>
+
+<p>SDK 에는 첨부 메뉴 항목을 제어하는 클라이언트 설정이 있습니다.</p>
+
+<pre>config={{ conversation: { input: {
+  gallery: { photoEnabled: <span class="k">false</span> },   <span class="c">// 사진</span>
+  fileEnabled: <span class="k">false</span>,                 <span class="c">// 파일</span>
+  camera: { photoEnabled: <span class="k">false</span> },    <span class="c">// React Native 전용</span>
+}}}}</pre>
+
+<p>
+  <strong>그런데 이것만으로는 + 버튼이 사라지지 않습니다.</strong>
+  위 2.1 의 조기 반환이 <code>attachment_mode</code> 기준으로만 걸려 있어,
+  메뉴 항목 배열만 비고 버튼은 계속 렌더됩니다.
+</p>
+
+<div class="warn">
+  <span class="t">실제로 확인한 결과</span>
+  두 설정을 모두 <code>false</code> 로 두고 측정한 값입니다.
+  <strong>사용자는 + 를 눌렀는데 아무 항목도 없는 빈 시트를 보게 됩니다.</strong>
+<pre style="margin-top:8px">첨부버튼_존재 : <span class="bad">true</span>     <span class="c">// 그대로 남음</span>
+파일input수   : 0
+시트항목      : []       <span class="c">// 눌러도 빈 시트</span></pre>
+</div>
+
+<p>따라서 <strong>입력 영역 자체를 교체하는 방법</strong>이 필요합니다.</p>
+
+<h2><span class="num">3</span>해결 구조</h2>
+
+<p>
+  <code>ConversationLayout.Footer</code> 슬롯으로 입력 영역을 커스텀 컴포넌트로 바꾸고,
+  첨부 버튼 노출을 <strong>두 조건의 AND</strong> 로 판단합니다.
+</p>
+
+<pre>첨부 버튼 노출 = <span class="k">앱이 알려준 지원 여부</span>  AND  <span class="k">기존 SDK 첨부 정책</span>
+                 (supportsAttachment)      (attachment_mode 등)</pre>
+
+<table>
+  <tr><th>조건</th><th>출처</th><th>역할</th></tr>
+  <tr>
+    <td><code>supportsAttachment</code></td>
+    <td>네이티브 앱 → 웹뷰</td>
+    <td>앱 버전 판단 (예: 1.00.12 이상)</td>
+  </tr>
+  <tr>
+    <td><code>createAttachmentRules(...).isEnabled()</code></td>
+    <td>SDK</td>
+    <td>서버 첨부 정책 반영</td>
+  </tr>
+</table>
+
+<div class="note">
+  <span class="t">왜 두 조건을 모두 봐야 하나</span>
+  앱 조건만 보고 열면, 나중에 서버에서 첨부를 꺼도(<code>attachment_mode: off</code>)
+  <strong>신버전 앱에는 버튼이 계속 남습니다.</strong>
+  반대로 서버 정책만 보면 버전 구분이 안 됩니다. 둘 다 만족할 때만 노출해야 합니다.
+</div>
+
+<div class="warn">
+  <span class="t">적용 범위를 좁히세요</span>
+  입력창을 직접 구현하면 SDK 가 제공하던 동작(입력 비활성 상태, 다국어 문구, 스타일 등)을
+  <strong>직접 책임져야 합니다.</strong> 버전 분기가 필요한 플랫폼(예: Android)에만 적용하고,
+  iOS 와 일반 웹은 기본 입력창을 그대로 두는 편이 안전합니다.
+</div>
+
+<h2><span class="num">4</span>구현</h2>
+
+<h3>4.1 앱 → 웹으로 지원 여부 전달</h3>
+
+<p>
+  <strong>버전 판단은 네이티브가 합니다.</strong> 앱이 자기 버전을 보고
+  첨부 UI 를 감당할 수 있는지 결정한 뒤, 그 결과만 웹뷰에 넘깁니다.
+</p>
+
+<pre><span class="c">// Android — 웹뷰 URL 에 파라미터로 전달하는 예</span>
+<span class="k">val</span> supportsAttachment = BuildConfig.VERSION_NAME &gt;= <span class="k">"1.00.12"</span>   <span class="c">// 비교 방식은 앱 정책에 맞게</span>
+
+<span class="k">val</span> url = Uri.parse(baseUrl).buildUpon()
+    .appendQueryParameter(<span class="k">"supportsAttachment"</span>, supportsAttachment.toString())
+    .build().toString()</pre>
+
+<p>웹에서는 이 값을 읽습니다. <strong>값이 없으면 구버전으로 간주해 끕니다.</strong></p>
+
+<pre><span class="c">// 미전달 시 false — 구버전 앱·예전 웹뷰 모두 안전하게 막힙니다</span>
+<span class="k">const</span> supportsAttachment =
+  <span class="k">new</span> URLSearchParams(location.search).get(<span class="k">'supportsAttachment'</span>) === <span class="k">'true'</span>;</pre>
+
+<div class="note">
+  <span class="t">브릿지로 넘겨도 됩니다</span>
+  URL 파라미터 대신 기존 웹뷰 브릿지로 전달해도 동일합니다.
+  다만 <strong>첫 렌더 전에 값이 정해져 있어야</strong> 버튼이 깜빡이지 않으므로,
+  URL 파라미터가 더 단순합니다.
+</div>
+
+<h3>4.2 첨부 정책 읽기</h3>
+
+<p>SDK 의 첨부 정책은 아래 API 로 읽습니다. 서버 설정이 그대로 반영됩니다.</p>
+
+<pre><span class="k">const</span> { createAttachmentRules } = useMessengerSessionContext();
+<span class="k">const</span> { chatSDK } = useMessengerContext();
+
+<span class="k">const</span> rules = createAttachmentRules({
+  channel,
+  uploadSizeLimit: chatSDK.appInfo?.uploadSizeLimit,
+});</pre>
+
+<table>
+  <tr><th>속성</th><th>의미</th></tr>
+  <tr><td><code>isEnabled()</code></td><td>현재 첨부 가능 여부 (<code>attachment_mode</code> 반영)</td></tr>
+  <tr><td><code>supportedMimeTypes</code></td><td>허용 형식 — <code>accept</code> 에 그대로 사용</td></tr>
+  <tr><td><code>maxAttachmentCount</code></td><td>최대 첨부 개수</td></tr>
+  <tr><td><code>isSupportedMimeType(type)</code></td><td>형식 검사</td></tr>
+  <tr><td><code>getUploadSizeLimit(type)</code> / <code>...InMB(type)</code></td><td>용량 제한</td></tr>
+</table>
+
+<h3>4.3 커스텀 입력창</h3>
+
+<p>핵심만 추린 구현입니다. 전체 코드는 샘플의 <code>AppAwareMessageInput.tsx</code> 를 참고하세요.</p>
+
+<pre><span class="k">import</span> {
+  useConversationContext,
+  useMessengerContext,
+  useMessengerSessionContext,
+} <span class="k">from</span> '@sendbird/ai-agent-messenger-react';
+
+<span class="k">export function</span> AppAwareMessageInput({ supportsAttachment }) {
+  <span class="k">const</span> { channelSource, messageSource, state } = useConversationContext();
+  <span class="k">const</span> { chatSDK } = useMessengerContext();
+  <span class="k">const</span> { createAttachmentRules } = useMessengerSessionContext();
+
+  <span class="k">const</span> channel = channelSource.channel;
+  <span class="k">const</span> inputDisabled = state.input.disabled;   <span class="c">// AI 응답 중 등</span>
+
+  <span class="k">const</span> rules = createAttachmentRules({
+    channel,
+    uploadSizeLimit: chatSDK.appInfo?.uploadSizeLimit,
+  });
+
+  <span class="c">// ★ 두 조건의 AND</span>
+  <span class="k">const</span> showAttachment = supportsAttachment &amp;&amp; !!channel &amp;&amp; rules.isEnabled();
+
+  <span class="k">const</span> send = <span class="k">async</span> () => {
+    <span class="k">if</span> (files.length &gt; 0) {
+      <span class="k">await</span> messageSource.sendFileMessage({ file: files[0], message: text || <span class="k">undefined</span> });
+    } <span class="k">else</span> {
+      <span class="k">await</span> messageSource.sendUserMessage({ message: text });
+    }
+  };
+
+  <span class="k">return</span> (
+    &lt;div&gt;
+      {showAttachment &amp;&amp; (
+        &lt;&gt;
+          &lt;button aria-label="파일 첨부" disabled={inputDisabled}
+                  onClick={() =&gt; fileInputRef.current?.click()}&gt;+&lt;/button&gt;
+          &lt;input type="file" style={{ display: 'none' }} ref={fileInputRef}
+                 accept={rules.supportedMimeTypes.join(',')}
+                 multiple={rules.maxAttachmentCount &gt; 1}
+                 onChange={(e) =&gt; pickFiles(e.currentTarget.files)} /&gt;
+        &lt;/&gt;
+      )}
+
+      &lt;textarea value={text} disabled={inputDisabled}
+                onChange={(e) =&gt; setText(e.target.value)} /&gt;
+
+      &lt;button aria-label="메시지 보내기" disabled={inputDisabled} onClick={send}&gt;전송&lt;/button&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+
+<div class="warn">
+  <span class="t">반드시 지켜야 할 두 가지</span>
+  <strong>① <code>state.input.disabled</code> 를 따르세요.</strong>
+  AI 가 응답 중이거나 추천 답변 선택을 기다리는 동안 SDK 는 입력을 막습니다.
+  이 값을 무시하면 사용자가 그 사이에 메시지를 보낼 수 있습니다.<br><br>
+  <strong>② 첨부 전 용량·형식·개수를 검사하세요.</strong>
+  <code>rules</code> 의 값으로 직접 검사해야 합니다. 서버에서 거부되면
+  사용자는 이유를 알 수 없습니다.
+</div>
+
+<h3>4.4 푸터 슬롯에 연결</h3>
+
+<pre>&lt;FixedMessenger ...&gt;
+  &lt;FixedMessenger.ConversationChildren&gt;
+    &lt;ConversationLayout.Footer
+      component={() =&gt; &lt;AppAwareMessageInput supportsAttachment={supportsAttachment} /&gt;}
+    /&gt;
+  &lt;/FixedMessenger.ConversationChildren&gt;
+&lt;/FixedMessenger&gt;</pre>
+
+<div class="note">
+  <span class="t">기존 푸터 커스터마이징과 함께 쓸 때</span>
+  <code>ConversationLayout.Footer</code> 슬롯은 <strong>하나만</strong> 적용됩니다.
+  종료된 대화의 "대화 시작" 버튼처럼 이미 푸터를 커스터마이징하고 있다면,
+  <strong>하나의 컴포넌트 안에서 함께 렌더</strong>해야 합니다.
+<pre style="margin-top:8px"><span class="k">export function</span> AppAwareFooter({ supportsAttachment }) {
+  <span class="k">return</span> (
+    &lt;&gt;
+      &lt;StartNewConversationButton /&gt;
+      &lt;AppAwareMessageInput supportsAttachment={supportsAttachment} /&gt;
+    &lt;/&gt;
+  );
+}</pre>
+</div>
+
+<h2><span class="num">5</span>동작 확인 결과</h2>
+
+<p>샘플에 적용해 실제로 확인한 결과입니다. (첨부 정책: <code>attachment_mode: always</code>, 이미지만 허용, 1개)</p>
+
+<table>
+  <tr><th>조건</th><th>첨부 버튼</th><th>비고</th></tr>
+  <tr>
+    <td><code>supportsAttachment</code> 미전달 (구버전 앱)</td>
+    <td><strong>미노출</strong></td>
+    <td>입력창·전송은 정상 동작</td>
+  </tr>
+  <tr>
+    <td><code>supportsAttachment=true</code> (신버전 앱)</td>
+    <td><strong>노출</strong></td>
+    <td><code>accept</code>, <code>multiple</code> 에 서버 정책 그대로 반영</td>
+  </tr>
+</table>
+
+<table>
+  <tr><th>확인 항목</th><th>결과</th></tr>
+  <tr><td>허용 형식 반영</td><td><code>accept="image/png,image/jpeg,image/jpg"</code></td></tr>
+  <tr><td>개수 제한 반영</td><td><code>multiple=false</code> (최대 1개 설정)</td></tr>
+  <tr><td>AI 응답 대기 중</td><td>입력·첨부·전송 <strong>모두 비활성</strong></td></tr>
+  <tr><td>텍스트 전송</td><td>정상 — 에이전트 응답 확인</td></tr>
+  <tr><td>이미지 + 텍스트 전송</td><td>정상 — 말풍선 표시 후 첨부 상태 해제</td></tr>
+</table>
+
+<div class="ok">
+  <span class="t">확인 완료</span>
+  앱이 넘긴 값에 따라 첨부 버튼이 노출/미노출로 갈리고,
+  노출될 때는 서버 첨부 정책(형식·개수·용량)이 그대로 적용되는 것을 확인했습니다.
+</div>
+
+<h2><span class="num">6</span>구현 시 유의 사항</h2>
+
+<h3>값이 없을 때는 끄세요</h3>
+<p>
+  <code>supportsAttachment</code> 가 전달되지 않으면 <strong>구버전 앱으로 간주</strong>해
+  첨부를 막는 것이 안전합니다. 위 예시의 <code>=== 'true'</code> 비교가 이 역할을 합니다.
+</p>
+
+<h3>버전 비교는 문자열 비교에 주의</h3>
+<p>
+  <code>"1.00.9" &gt; "1.00.12"</code> 는 문자열 비교에서 <strong>참</strong>이 됩니다.
+  자릿수가 다른 버전 체계를 쓴다면 숫자 단위로 쪼개 비교하세요.
+  이 판단은 앱에서 하므로 웹에는 영향이 없습니다.
+</p>
+
+<h3>SDK 기본 입력창의 기능을 직접 책임집니다</h3>
+<p>
+  입력 영역을 교체하면 다국어 문구, 입력 비활성 처리, 스타일, 접근성 레이블을
+  <strong>직접 구현해야 합니다.</strong> 문구는 <code>useLocalizationContext()</code> 의
+  <code>stringSet</code> 을 쓰면 SDK 의 다국어 설정을 그대로 따를 수 있습니다.
+</p>
+
+<h3>적용 플랫폼을 분리하세요</h3>
+<p>
+  버전 분기가 필요 없는 iOS·일반 웹까지 커스텀 입력창을 쓰면 관리 부담만 늘어납니다.
+  <strong>해당 플랫폼에서만</strong> 푸터를 교체하고, 나머지는 기본 입력창을 쓰는 구성을 권합니다.
+</p>
+
+<h3>서버 설정이 더 간단한 경우</h3>
+<p>
+  앱 버전 구분이 필요 없고 <strong>첨부를 완전히 끄거나 켜기만</strong> 하면 된다면,
+  <code>attachment_mode</code> 설정만으로 충분합니다. 이 가이드의 커스텀 구현은
+  <strong>버전별 분기가 필요할 때만</strong> 쓰세요.
+</p>
+
+<div class="disclaimer">
+  본 문서는 @sendbird/ai-agent-messenger-react v1.45.0 기준으로 작성되었습니다.
+  2장의 SDK 동작은 배포 번들 코드를 직접 확인한 내용이며,
+  5장의 결과는 샘플 앱에서 측정한 것입니다.
+  사용된 API 는 모두 SDK 가 공개적으로 export 하는 항목입니다.
+  SDK 버전 업그레이드 시 동작을 재확인하시기 바랍니다.
+</div>
+
+</body>
+</html>

@@ -1,12 +1,6 @@
-import { ConversationStatus } from '@sendbird/chat/aiAgent';
-import {
-  ConversationLayout,
-  useConversationContext,
-  useLocalizationContext,
-  useMessengerContext,
-  useMessengerSessionContext,
-} from '@sendbird/ai-agent-messenger-react';
-import { useState } from 'react';
+import { ConversationLayout } from '@sendbird/ai-agent-messenger-react';
+
+import { StartNewConversationButton } from './StartNewConversationButton.tsx';
 
 const { Footer: DefaultFooter } = ConversationLayout.defaults.components;
 
@@ -49,55 +43,9 @@ const { Footer: DefaultFooter } = ConversationLayout.defaults.components;
  * ```
  */
 export function ClosedConversationFooter() {
-  const { channelSource, goToActiveConversation } = useConversationContext();
-  const { aiAgentInfo, createConversation } = useMessengerSessionContext();
-  const { language, countryCode, context } = useMessengerContext();
-  const { stringSet } = useLocalizationContext();
-  const [pending, setPending] = useState(false);
-
-  const isClosed = channelSource.channel?.conversation?.status === ConversationStatus.CLOSED;
-
-  const startNewConversation = async () => {
-    setPending(true);
-    try {
-      if (aiAgentInfo.isMultipleActiveConversationsEnabled) {
-        // 새 대화를 만들고 그 대화로 이동합니다.
-        await createConversation({
-          aiAgentId: aiAgentInfo.userId,
-          language,
-          country: countryCode,
-          context,
-        });
-      }
-      // 단일 대화 설정이면 새로 만들지 않고 기존 활성 대화로 이동합니다.
-      await goToActiveConversation();
-    } finally {
-      setPending(false);
-    }
-  };
-
   return (
     <>
-      {isClosed && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={startNewConversation}
-            style={{
-              padding: '10px 20px',
-              borderRadius: 6,
-              border: '1px solid rgba(0,0,0,0.2)',
-              background: 'transparent',
-              color: 'inherit',
-              cursor: pending ? 'progress' : 'pointer',
-              opacity: pending ? 0.5 : 1,
-            }}
-          >
-            {stringSet.TALK_TO_AGENT}
-          </button>
-        </div>
-      )}
+      <StartNewConversationButton />
       {/* 입력창 등 기본 푸터는 그대로 유지합니다. */}
       <DefaultFooter />
     </>
