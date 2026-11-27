@@ -73,6 +73,8 @@
   td.q { width: 30%; font-weight: 600; }
   .disclaimer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #e8eaed;
                 font-size: 9pt; color: #80868b; line-height: 1.7; }
+  a { color: #6b4ef5; text-decoration: none; }
+  a code { background: #f1f3f4; }
 </style>
 </head>
 <body>
@@ -497,6 +499,25 @@ aiAgentInfo.isMultipleActiveConversationsEnabled   <span class="c">// boolean</s
   <code>channelSource.channel?.conversation?.status</code> 로 확인합니다.
   <strong>옵셔널 체이닝을 생략하지 마세요</strong> — 대화가 아직 로드되지 않은
   시점에는 <code>channel</code> 이 <code>undefined</code> 입니다.
+</p>
+
+
+<h2 style="border-bottom:2px solid #e8eaed;">샘플 코드 위치</h2>
+
+<p>
+  아래 파일에서 전체 구현을 확인하실 수 있습니다.
+  파일명을 누르면 저장소로 이동합니다.
+</p>
+
+<table>
+  <tr><th>파일</th><th>내용</th></tr>
+  <tr><td><a href="https://github.com/YJSendBird/delight-ai-mobileweb/blob/main/web/src/components/ClosedConversationFooter.tsx"><code>web/src/components/ClosedConversationFooter.tsx</code></a></td><td>푸터 교체 컴포넌트 (4장)</td></tr>
+  <tr><td><a href="https://github.com/YJSendBird/delight-ai-mobileweb/blob/main/web/src/components/StartNewConversationButton.tsx"><code>web/src/components/StartNewConversationButton.tsx</code></a></td><td>새 대화 생성 버튼 — 다중/단일 설정 분기 (4.2, 5장)</td></tr>
+  <tr><td><a href="https://github.com/YJSendBird/delight-ai-mobileweb/blob/main/web/src/pages/SimpleChatPage.tsx"><code>web/src/pages/SimpleChatPage.tsx</code></a></td><td>슬롯 연결 및 설정 예시 (4.1, 4.3장)</td></tr>
+</table>
+
+<p style="font-size:9.5pt;color:#5f6368;">
+  저장소 &nbsp;·&nbsp; <a href="https://github.com/YJSendBird/delight-ai-mobileweb/blob/main/">github.com/YJSendBird/delight-ai-mobileweb</a>
 </p>
 
 <div class="disclaimer">
