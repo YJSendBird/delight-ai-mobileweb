@@ -1,5 +1,9 @@
 import { AnonymousSessionInfo, ManualSessionInfo } from '@sendbird/ai-agent-messenger-react';
 import { bridge } from '../libs/bridge';
+import { isVersionAtLeast, parseAppInfo } from './appInfo';
+
+/** 첨부 UI 를 노출할 최소 앱 버전 (Android) */
+const MIN_ANDROID_VERSION_FOR_ATTACHMENT = '1.00.12';
 
 export interface AppParams {
   appId: string;
@@ -13,6 +17,15 @@ export interface AppParams {
   hasActiveConversation: boolean;
   initialContextObject: Record<string, string>;
   initialChannelUrl?: string;
+  /**
+   * 앱이 알려주는 기능 지원 여부.
+   *
+   * 첨부 기능은 서버(에이전트) 설정으로만 켜고 끌 수 있어 **앱 버전별 분기가 불가능**합니다.
+   * 그래서 "이 앱 버전이 첨부 UI 를 감당할 수 있는가"를 따로 판단해 넘깁니다.
+   */
+  appCapabilities: {
+    supportsAttachment: boolean;
+  };
 }
 
 /**
@@ -27,6 +40,22 @@ export function parseAppParams(): AppParams | null {
   const authToken = urlParams.get('authToken');
   const hasActiveConversation = urlParams.get('hasActiveConversation') === 'true';
   const initialChannelUrl = urlParams.get('initialChannelUrl') ?? undefined;
+
+  // 첨부 UI 노출 여부 판단
+  //
+  // 1순위: 앱이 명시적으로 넘겨준 값 (`supportsAttachment`)
+  // 2순위: User-Agent 에 실린 앱 버전 — 네이티브 수정 없이 웹에서 판단
+  //
+  // 둘 다 없으면 false(미노출). 일반 브라우저·iOS 처럼 UA 에 앱 정보가 없는
+  // 환경에서도 자동으로 꺼지므로 안전합니다.
+  const explicit = urlParams.get('supportsAttachment');
+  const appInfo = parseAppInfo();
+  const appCapabilities = {
+    supportsAttachment:
+      explicit !== null
+        ? explicit === 'true'
+        : appInfo.os === 'a' && isVersionAtLeast(appInfo.version, MIN_ANDROID_VERSION_FOR_ATTACHMENT),
+  };
 
   // context_ prefix로 시작하는 모든 URL params를 initialContextObject로 변환
   const initialContextObject: Record<string, string> = {};
@@ -51,6 +80,7 @@ export function parseAppParams(): AppParams | null {
     hasActiveConversation,
     initialContextObject,
     initialChannelUrl,
+    appCapabilities,
   };
 }
 

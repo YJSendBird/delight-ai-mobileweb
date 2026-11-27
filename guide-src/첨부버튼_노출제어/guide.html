@@ -105,6 +105,7 @@
     <li>구현
       <ol>
         <li>앱 → 웹으로 지원 여부 전달</li>
+        <li>앱 수정 없이 — User-Agent 활용</li>
         <li>첨부 정책 읽기</li>
         <li>커스텀 입력창</li>
         <li>푸터 슬롯에 연결</li>
@@ -127,6 +128,7 @@
   <tr><td class="q">해결 방법</td><td>입력 영역을 커스텀 컴포넌트로 교체하고, 첨부 버튼 노출을 직접 판단</td></tr>
   <tr><td class="q">판단 조건</td><td><strong>① 앱이 알려준 지원 여부 AND ② 기존 SDK 첨부 정책</strong></td></tr>
   <tr><td class="q">적용 범위</td><td>해당 플랫폼만 적용 가능 (예: Android 만). iOS·일반 웹은 기본 입력창 유지</td></tr>
+  <tr><td class="q">앱 수정 필요 여부</td><td>웹뷰 <strong>User-Agent 에 앱 버전이 이미 실려 있다면 앱 수정 불필요</strong> (4.2)</td></tr>
 </table>
 
 <p>
@@ -253,7 +255,104 @@
   URL 파라미터가 더 단순합니다.
 </div>
 
-<h3>4.2 첨부 정책 읽기</h3>
+<h3>4.2 앱이 값을 넘기지 않아도 되는 경우 — User-Agent 활용</h3>
+
+<p>
+  <strong>네이티브 앱이 이미 웹뷰 User-Agent 에 버전을 싣고 있다면,
+  앱을 수정할 필요가 없습니다.</strong> 웹에서 UA 를 읽어 직접 판단하면 됩니다.
+</p>
+
+<pre><span class="c">// 웹뷰 User-Agent 예시</span>
+Mozilla/5.0 (Linux; Android 14) ... Safari/537.36 appver='1.00.11' appos='a' appname='myapp'</pre>
+
+<table>
+  <tr><th>필드</th><th>의미</th><th>예</th></tr>
+  <tr><td><code>appver</code></td><td>앱 버전</td><td><code>1.00.11</code></td></tr>
+  <tr><td><code>appos</code></td><td>앱 OS</td><td><code>a</code> (Android)</td></tr>
+  <tr><td><code>appname</code></td><td>앱 이름</td><td><code>myapp</code></td></tr>
+</table>
+
+<p>파싱과 버전 비교 구현입니다.</p>
+
+<pre><span class="c">// 따옴표가 있어도(없어도) 동작하도록 느슨하게 읽습니다.</span>
+<span class="k">function</span> readUAField(ua, key) {
+  <span class="k">const</span> matched = ua.match(<span class="k">new</span> RegExp(`${key}\\s*=\\s*['"]?([^'";,\\s)]+)`, 'i'));
+  <span class="k">return</span> matched?.[1];
+}
+
+<span class="k">export function</span> parseAppInfo(ua = navigator.userAgent) {
+  <span class="k">return</span> {
+    name: readUAField(ua, 'appname'),
+    os: readUAField(ua, 'appos'),
+    version: readUAField(ua, 'appver'),
+  };
+}
+
+<span class="c">// ⚠️ 문자열 비교를 쓰면 안 됩니다 — '1.00.9' &gt; '1.00.12' 가 참이 됩니다.</span>
+<span class="k">export function</span> isVersionAtLeast(version, minimum) {
+  <span class="k">if</span> (!version) <span class="k">return false</span>;
+  <span class="k">const</span> toParts = (v) =&gt; v.split('.').map((p) =&gt; Number.parseInt(p, 10) || 0);
+  <span class="k">const</span> current = toParts(version), target = toParts(minimum);
+  <span class="k">for</span> (<span class="k">let</span> i = 0; i &lt; Math.max(current.length, target.length); i += 1) {
+    <span class="k">const</span> left = current[i] ?? 0, right = target[i] ?? 0;
+    <span class="k">if</span> (left !== right) <span class="k">return</span> left &gt; right;
+  }
+  <span class="k">return true</span>;   <span class="c">// 완전히 같은 버전</span>
+}</pre>
+
+<p>적용 코드입니다. <strong>앱이 명시적으로 넘긴 값이 있으면 그 값을 우선</strong>하고, 없으면 UA 로 판단합니다.</p>
+
+<pre><span class="k">const</span> MIN_ANDROID_VERSION_FOR_ATTACHMENT = '1.00.12';
+
+<span class="k">const</span> explicit = <span class="k">new</span> URLSearchParams(location.search).get('supportsAttachment');
+<span class="k">const</span> appInfo = parseAppInfo();
+
+<span class="k">const</span> supportsAttachment =
+  explicit !== <span class="k">null</span>
+    ? explicit === 'true'
+    : appInfo.os === 'a' &amp;&amp; isVersionAtLeast(appInfo.version, MIN_ANDROID_VERSION_FOR_ATTACHMENT);</pre>
+
+<div class="ok">
+  <span class="t">일반 브라우저·iOS 는 자동으로 꺼집니다</span>
+  UA 에 앱 정보가 없으면 <code>version</code> 이 <code>undefined</code> 라
+  <code>isVersionAtLeast</code> 가 <code>false</code> 를 돌려줍니다.
+  <code>appos === 'a'</code> 조건까지 걸려 있어 <strong>iOS 앱도 영향을 받지 않습니다.</strong>
+</div>
+
+<p>실제 파싱·판정 결과입니다. (기준 <code>1.00.12</code>)</p>
+
+<table>
+  <tr><th>UA 의 버전</th><th>파싱 결과</th><th>첨부 노출</th></tr>
+  <tr><td><code>1.00.11</code></td><td>myapp / a / 1.00.11</td><td>미노출</td></tr>
+  <tr><td><code>1.00.12</code> (경계)</td><td>myapp / a / 1.00.12</td><td><strong>노출</strong></td></tr>
+  <tr><td><code>1.01.0</code></td><td>myapp / a / 1.01.0</td><td><strong>노출</strong></td></tr>
+  <tr><td><code>1.00.9</code></td><td>myapp / a / 1.00.9</td><td>미노출 <span class="c">(문자열 비교였다면 노출됐을 값)</span></td></tr>
+  <tr><td>따옴표 없는 포맷</td><td>myapp / a / 1.00.12</td><td><strong>노출</strong></td></tr>
+  <tr><td><code>appos='i'</code> (iOS)</td><td>myapp / i / 9.9.9</td><td>미노출</td></tr>
+  <tr><td>앱 정보 없음</td><td>- / - / -</td><td>미노출</td></tr>
+</table>
+
+<h3 style="page-break-before:auto;">어느 방식을 쓸 것인가</h3>
+
+<table>
+  <tr><th></th><th>① UA 에서 읽기</th><th>② 앱이 값 전달</th></tr>
+  <tr><td><strong>앱 수정</strong></td><td><strong>불필요</strong> (이미 UA 에 있다면)</td><td>필요</td></tr>
+  <tr><td><strong>기준 변경 시</strong></td><td>웹 코드 수정</td><td><strong>앱에서 처리</strong>, 웹 수정 불필요</td></tr>
+  <tr><td><strong>판단 주체</strong></td><td>웹</td><td>앱</td></tr>
+  <tr><td><strong>취약점</strong></td><td>UA 포맷이 바뀌면 깨짐</td><td>전달 누락 시 꺼짐</td></tr>
+</table>
+
+<div class="warn">
+  <span class="t">UA 방식의 주의점</span>
+  UA 포맷은 <strong>앱이 언제든 바꿀 수 있고, 바뀌면 조용히 깨집니다.</strong>
+  (파싱 실패 → <code>undefined</code> → 첨부가 꺼진 채 아무 에러도 안 남음)<br><br>
+  적용 전에 <strong>실제 기기의 UA 문자열을 반드시 확인</strong>하고,
+  앱 측에 <strong>UA 포맷을 바꿀 때 알려달라고 공유</strong>해 두세요.
+  위 코드처럼 <strong>명시적 전달값을 우선</strong>하게 해 두면,
+  나중에 앱이 값을 넘기도록 바뀌어도 웹 수정 없이 전환됩니다.
+</div>
+
+<h3>4.3 첨부 정책 읽기</h3>
 
 <p>SDK 의 첨부 정책은 아래 API 로 읽습니다. 서버 설정이 그대로 반영됩니다.</p>
 
@@ -274,7 +373,7 @@
   <tr><td><code>getUploadSizeLimit(type)</code> / <code>...InMB(type)</code></td><td>용량 제한</td></tr>
 </table>
 
-<h3>4.3 커스텀 입력창</h3>
+<h3>4.4 커스텀 입력창</h3>
 
 <p>핵심만 추린 구현입니다. 전체 코드는 샘플의 <code>AppAwareMessageInput.tsx</code> 를 참고하세요.</p>
 
@@ -339,7 +438,7 @@
   사용자는 이유를 알 수 없습니다.
 </div>
 
-<h3>4.4 푸터 슬롯에 연결</h3>
+<h3>4.5 푸터 슬롯에 연결</h3>
 
 <pre>&lt;FixedMessenger ...&gt;
   &lt;FixedMessenger.ConversationChildren&gt;

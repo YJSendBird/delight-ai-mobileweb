@@ -377,6 +377,14 @@ DOM 상으로는 기본 ≡ 가 들어왔다 빠지는 게 맞지만, SDK가 `us
 
 - 구현: `web/src/components/AppAwareMessageInput.tsx`, `AppAwareFooter.tsx`
 - 버전 판단은 **네이티브가** 수행하고 웹은 결과만 받습니다 → 기준 버전이 바뀌어도 웹 수정 불필요
+- **웹뷰 User-Agent에 앱 버전이 이미 실려 있다면 앱 수정이 필요 없습니다.** 웹에서 직접 파싱해 판단합니다 (`web/src/utils/appInfo.ts`)
+
+  ```
+  ... Safari/537.36 appver='1.00.11' appos='a' appname='myapp'
+  ```
+
+  버전 비교에 **문자열 비교를 쓰면 안 됩니다** — `'1.00.9' > '1.00.12'`가 참이 됩니다. 숫자 단위로 쪼개 비교하세요.
+  UA 포맷은 앱이 바꾸면 조용히 깨지므로, 적용 전 실제 기기 UA를 확인하고 앱 측과 공유해 두세요.
 - 값이 전달되지 않으면 **구버전으로 간주해 끕니다** (`=== 'true'` 비교)
 - `state.input.disabled`를 반드시 따르세요 — AI 응답 중 입력이 막히는 동작이 사라집니다
 - `ConversationLayout.Footer` 슬롯은 하나만 적용되므로, 7절의 "대화 시작" 버튼과 함께 쓰려면 한 컴포넌트에서 같이 렌더해야 합니다
